@@ -1115,26 +1115,39 @@
         }
 
         var heldPearlEdgeIds = {};
-        var heldNodeId = null;
+        var heldNodesByPointer = {}; // نگاشت pointerId به شناسه گره جهت پشتیبانی کامل از لمس همزمان چند انگشت (Multi-touch)
 
-        // کنترل پویا و آنی قابلیت Pan و حرکت دادن گراف
-        function setNetworkPanEnabled(enabled) {
-            if (!network) return;
-            if (network.interactionHandler && network.interactionHandler.options) {
-                network.interactionHandler.options.dragView = enabled;
+        // به‌روزرسانی مجموعه مرواریدهای روشن بر اساس تمامی گره‌های در حال لمس همزمان
+        function updateHeldPearls() {
+            var newHeld = {};
+            for (var ptrId in heldNodesByPointer) {
+                var nId = heldNodesByPointer[ptrId];
+                if (nId !== null && nId !== undefined) {
+                    edgesData.forEach(function(e) {
+                        if (e.from === nId || e.to === nId) {
+                            newHeld[e.id] = true;
+                            delete pearlFlashStates[e.id];
+                        }
+                    });
+                }
             }
-            network.setOptions({ interaction: { dragView: enabled } });
+            heldPearlEdgeIds = newHeld;
+            if (network) network.redraw();
         }
 
-        function releaseHeldPearls() {
-            var hadHeld = (heldNodeId !== null || Object.keys(heldPearlEdgeIds).length > 0);
-            if (hadHeld) {
-                heldNodeId = null;
+        // قطع آنی مدار الکتریسیته برای یک اشاره‌گر مشخص یا تمام اشاره‌گرها به محض رها شدن
+        function releaseHeldPearls(pointerId) {
+            if (pointerId !== undefined && pointerId !== null) {
+                if (heldNodesByPointer[pointerId] !== undefined) {
+                    delete heldNodesByPointer[pointerId];
+                    updateHeldPearls();
+                }
+            } else {
+                var hadHeld = Object.keys(heldNodesByPointer).length > 0 || Object.keys(heldPearlEdgeIds).length > 0;
+                heldNodesByPointer = {};
                 heldPearlEdgeIds = {};
-                if (network) network.redraw();
+                if (hadHeld && network) network.redraw();
             }
-            // بازگردانی آنی امکان جابجایی (Pan) گراف پس از رها شدن کلیک یا لمس
-            setNetworkPanEnabled(true);
         }
 
         // واکنش رعدآسای نوری روی مرواریدهای میان‌مسیرهای متصل (برای کلیک راست یا چشمک‌های موقت)
@@ -1152,27 +1165,25 @@
         }
 
         // واکنش کامل و آنی به لمس یا فشردن گره (سر خوردن گره + ارتعاش طناب + هدایت الکتریکی مرواریدها)
-        function triggerNodeTouchResponse(nodeId, isRightClick) {
+        function triggerNodeTouchResponse(nodeId, isRightClick, pointerId) {
             if (!nodeId) return;
             triggerNodeDodge(nodeId);
             triggerNodeNeighborsWiggle(nodeId);
 
             if (isRightClick) {
                 // در کلیک راست: چشمک زدن سریع مرواریدهای همسایه با سرعت کنونی (۲۲۱ میلی‌ثانیه) و خاموش شدن خودکار
-                releaseHeldPearls();
+                if (pointerId !== undefined && pointerId !== null) {
+                    delete heldNodesByPointer[pointerId];
+                } else {
+                    heldNodesByPointer = {};
+                }
+                updateHeldPearls();
                 triggerPearlLightningFlash(nodeId);
             } else {
-                // در کلیک چپ و تپ لمسی موبایل: برقراری مدار الکتریکی و روشن ماندن مرواریدها تا زمان اتصال دست یا کلیک
-                heldNodeId = nodeId;
-                heldPearlEdgeIds = {};
-                var connectedEdges = edgesData.filter(function(e) {
-                    return e.from === nodeId || e.to === nodeId;
-                });
-                connectedEdges.forEach(function(e) {
-                    heldPearlEdgeIds[e.id] = true;
-                    delete pearlFlashStates[e.id];
-                });
-                if (network) network.redraw();
+                // در کلیک چپ و تپ لمسی موبایل (با پشتیبانی کامل از لمس همزمان چند گره با چند انگشت):
+                var pId = (pointerId !== undefined && pointerId !== null) ? pointerId : 'mouse';
+                heldNodesByPointer[pId] = nodeId;
+                updateHeldPearls();
             }
 
             if (!wiggleAnimFrame) {
@@ -1958,10 +1969,17 @@
                 }
             }
 
-            var lastHandledNodePressId = null;
-            var lastHandledNodePressTime = 0;
+            var lastHandledNodePressByPointer = {};
             var isRightDragging = false;
             var rightDragLast = null;
+
+            // متغیرهای مدیریت ژست زوم تک‌انگشتی (Double-Tap & Drag) در موبایل و دسکتاپ
+            var doubleTapCandidate = false;
+            var doubleTapActive = false;
+            var doubleTapPointerId = null;
+            var doubleTapStartPos = null;
+            var doubleTapLastY = 0;
+            var doubleTapAnchorDOM = null;
 
             // پاسخ آنی و صفر میلی‌ثانیه به فشردن کلیک/تپ روی گره (بدون انتظار برای برداشتن کلیک)
             container.addEventListener('pointerdown', function(e) {
@@ -1974,28 +1992,59 @@
                 var domX = e.clientX - rect.left;
                 var domY = e.clientY - rect.top;
                 var hitNodeDeadZone = getNodeInDeadZone(domX, domY);
+
                 if (hitNodeDeadZone !== null) {
-                    lastHandledNodePressId = hitNodeDeadZone;
-                    lastHandledNodePressTime = Date.now();
+                    lastHandledNodePressByPointer[e.pointerId] = hitNodeDeadZone;
                     lastBgTapTime = 0;
-                    // غیرفعال‌سازی قطعی امکان Pan و جابجایی گراف هنگام فشردن و نگه‌داشتن کلیک یا تپ روی گره
-                    setNetworkPanEnabled(false);
+                    doubleTapCandidate = false;
+                    doubleTapActive = false;
                     // شلیک آنی در لحظه فشردن کلیک: سر خوردن گره روی رئوس ستاره + انتشار موج
-                    // در کلیک چپ و تپ موبایل: جریان مدار الکتریکی وصل شده و مرواریدها پیوسته روشن می‌مانند
-                    // در کلیک راست: چشمک رعدآسا با سرعت ۲۲۱ میلی‌ثانیه فعلی و خاموش شدن خودکار
-                    triggerNodeTouchResponse(hitNodeDeadZone, isRight);
+                    // در کلیک چپ و تپ لمسی موبایل: جریان پیوسته الکتریکی (با پشتیبانی کامل از لمس همزمان چند گره با چند انگشت)
+                    // طبق درخواست، قابلیت Pan باز می‌ماند تا بتوان همزمان با لمس گره، گراف را حرکت داد
+                    triggerNodeTouchResponse(hitNodeDeadZone, isRight, e.pointerId);
                 } else if (isRight) {
                     // درگ و جابجایی صفحه با کلیک راست (کاملاً مشابه کلیک چپ)
                     isRightDragging = true;
                     rightDragLast = { x: e.clientX, y: e.clientY };
+                } else {
+                    // بررسی شروع کاندیداتوری زوم تک‌انگشتی با تپ دوبل و کشیدن (Double-Tap & Drag)
+                    var nowDown = Date.now();
+                    if (nowDown - lastBgTapTime < 380 && Math.hypot(e.clientX - lastBgTapX, e.clientY - lastBgTapY) < 55) {
+                        doubleTapCandidate = true;
+                        doubleTapActive = false;
+                        doubleTapPointerId = e.pointerId;
+                        doubleTapStartPos = { x: e.clientX, y: e.clientY };
+                        doubleTapLastY = e.clientY;
+                        doubleTapAnchorDOM = { x: domX, y: domY };
+                    } else {
+                        doubleTapCandidate = false;
+                        doubleTapActive = false;
+                        doubleTapPointerId = null;
+                    }
                 }
             }, { capture: true, passive: true });
 
             container.addEventListener('pointerup', function(e) {
                 isRightDragging = false;
                 rightDragLast = null;
-                // قطع آنی و بدون وقفه جریان الکتریسیته مرواریدها به محض رها شدن کلیک یا انگشت
-                releaseHeldPearls();
+
+                // پایان حالت زوم تک‌انگشتی با تپ دوبل و کشیدن
+                if (doubleTapActive) {
+                    doubleTapActive = false;
+                    doubleTapCandidate = false;
+                    doubleTapPointerId = null;
+                    if (network && network.interactionHandler && network.interactionHandler.options) {
+                        network.interactionHandler.options.dragView = true;
+                    }
+                    lastBgTapTime = 0;
+                    tapStart = null;
+                    return;
+                }
+                doubleTapCandidate = false;
+                doubleTapPointerId = null;
+
+                // قطع آنی و بدون وقفه جریان الکتریسیته برای گره مربوط به این انگشت/کلیک
+                releaseHeldPearls(e.pointerId);
 
                 if (!tapStart) return;
                 var dx = e.clientX - tapStart.x;
@@ -2008,8 +2057,8 @@
                 var domY = e.clientY - rect.top;
 
                 // در مرحله برداشتن کلیک روی گره مطلقاً هیچ واکنش ثانویه‌ای نشان داده نمی‌شود
-                if (lastHandledNodePressId !== null) {
-                    lastHandledNodePressId = null;
+                if (lastHandledNodePressByPointer[e.pointerId] !== undefined) {
+                    delete lastHandledNodePressByPointer[e.pointerId];
                     return;
                 }
                 var hitNodeDeadZone = getNodeInDeadZone(domX, domY);
@@ -2026,7 +2075,7 @@
                         var hitNodeId = network ? network.getNodeAt({ x: domX, y: domY }) : undefined;
                         if (hitNodeId === undefined) {
                             var nowTap = Date.now();
-                            if (nowTap - lastBgTapTime < 340 && Math.hypot(e.clientX - lastBgTapX, e.clientY - lastBgTapY) < 42) {
+                            if (nowTap - lastBgTapTime < 360 && Math.hypot(e.clientX - lastBgTapX, e.clientY - lastBgTapY) < 48) {
                                 lastBgTapTime = 0;
                                 toggleMobileFullscreen();
                             } else {
@@ -2042,29 +2091,83 @@
             }, { capture: true, passive: true });
 
             window.addEventListener('pointermove', function(e) {
+                // الف) هدایت پیوسته زوم تک‌انگشتی (Double-Tap & Drag)
+                if (doubleTapCandidate && e.pointerId === doubleTapPointerId) {
+                    var moveDist = Math.hypot(e.clientX - doubleTapStartPos.x, e.clientY - doubleTapStartPos.y);
+                    if (!doubleTapActive && moveDist > 7) {
+                        doubleTapActive = true;
+                        if (network && network.interactionHandler && network.interactionHandler.options) {
+                            network.interactionHandler.options.dragView = false;
+                        }
+                    }
+
+                    if (doubleTapActive) {
+                        var dy = e.clientY - doubleTapLastY;
+                        doubleTapLastY = e.clientY;
+
+                        // کشیدن به بالا (dy منفی): زوم اوت (کوچک‌نمایی)
+                        // کشیدن به پایین (dy مثبت): زوم این (بزرگنمایی)
+                        if (Math.abs(dy) > 0.05 && network) {
+                            var currentScale = network.getScale();
+                            var zoomFactor = Math.exp(dy * 0.0075);
+                            var newScale = currentScale * zoomFactor;
+                            newScale = Math.max(0.25, Math.min(4.5, newScale));
+
+                            var rect = container.getBoundingClientRect();
+                            var centerDOM = { x: rect.width * 0.5, y: rect.height * 0.5 };
+                            var anchorCanvas = network.DOMtoCanvas(doubleTapAnchorDOM);
+                            var newCenterX = anchorCanvas.x - (doubleTapAnchorDOM.x - centerDOM.x) / newScale;
+                            var newCenterY = anchorCanvas.y - (doubleTapAnchorDOM.y - centerDOM.y) / newScale;
+
+                            network.moveTo({
+                                position: { x: newCenterX, y: newCenterY },
+                                scale: newScale
+                            });
+                        }
+                        return;
+                    }
+                }
+
+                // ب) جابجایی صفحه با کلیک راست (مشابه کلیک چپ)
                 if (isRightDragging && rightDragLast && network) {
                     var dx = e.clientX - rightDragLast.x;
-                    var dy = e.clientY - rightDragLast.y;
+                    var dyR = e.clientY - rightDragLast.y;
                     rightDragLast = { x: e.clientX, y: e.clientY };
                     var currentPos = network.getViewPosition();
                     var scale = network.getScale();
                     network.moveTo({
                         position: {
                             x: currentPos.x - (dx / scale),
-                            y: currentPos.y - (dy / scale)
+                            y: currentPos.y - (dyR / scale)
                         }
                     });
                 }
             }, { passive: true });
 
-            function handleGlobalPointerRelease() {
+            function handleGlobalPointerRelease(e) {
                 isRightDragging = false;
                 rightDragLast = null;
-                releaseHeldPearls();
+                if (doubleTapActive) {
+                    doubleTapActive = false;
+                    doubleTapCandidate = false;
+                    doubleTapPointerId = null;
+                    if (network && network.interactionHandler && network.interactionHandler.options) {
+                        network.interactionHandler.options.dragView = true;
+                    }
+                }
+                if (e && e.pointerId !== undefined) {
+                    releaseHeldPearls(e.pointerId);
+                    if (lastHandledNodePressByPointer[e.pointerId] !== undefined) {
+                        delete lastHandledNodePressByPointer[e.pointerId];
+                    }
+                } else {
+                    releaseHeldPearls();
+                    lastHandledNodePressByPointer = {};
+                }
             }
             window.addEventListener('pointerup', handleGlobalPointerRelease, { passive: true });
             window.addEventListener('pointercancel', handleGlobalPointerRelease, { passive: true });
-            window.addEventListener('blur', handleGlobalPointerRelease, { passive: true });
+            window.addEventListener('blur', function() { handleGlobalPointerRelease(); }, { passive: true });
             container.addEventListener('pointerleave', handleGlobalPointerRelease, { passive: true });
 
             // مهار مطلق منوی زمینه راست‌کلیک مرورگر در تمام صفحه؛ کلیک راست رفتاری کاملاً هم‌ارز کلیک چپ دارد
