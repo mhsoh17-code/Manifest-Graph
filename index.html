@@ -1,0 +1,2122 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>معماری پرداختن</title>
+    <meta name="application-name" content="معماری پرداختن">
+    <meta name="apple-mobile-web-app-title" content="معماری پرداختن">
+    <meta name="theme-color" content="#09090b">
+    <meta name="description" content="دریچه دوازدهم - محمدحسن سهرابی بیدار">
+    <meta name="author" content="محمدحسن سهرابی بیدار - Mohammadhasan Sohrabi-bidar">
+    <meta name="copyright" content="محمدحسن سهرابی بیدار - نشریه دریچه دوازدهم دانشگاه تهران">
+
+    <!-- آیکون تب مرورگر و صفحه وب‌سایت -->
+    <link rel="icon" type="image/x-icon" href="./utICON.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="./utICON.ico">
+    <link rel="apple-touch-icon" href="./preview.png">
+
+    <!-- متاتگ‌های تامبنیل شبکه اجتماعی (Open Graph / Telegram / WhatsApp / X) -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="معماری پرداختن">
+    <meta property="og:title" content="معماری پرداختن">
+    <meta property="og:description" content="دریچه دوازدهم - محمدحسن سهرابی بیدار">
+    <meta property="og:image" content="./preview.png">
+    <meta property="og:image:type" content="image/png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="معماری پرداختن">
+    <meta name="twitter:description" content="دریچه دوازدهم - محمدحسن سهرابی بیدار">
+    <meta name="twitter:image" content="./preview.png">
+
+    <script type="text/javascript" src="./assets/vis-network.min.js"></script>
+    <style type="text/css">
+        /* فونت محلی فارسی */
+        @font-face {
+            font-family: 'Vazirmatn';
+            font-style: normal;
+            font-weight: 100 900;
+            font-display: swap;
+            src: url('./assets/vazirmatn.woff2') format('woff2');
+            unicode-range: U+0600-06FF, U+0750-077F, U+0870-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
+        }
+
+        /* فونت محلی ارقام و انگلیسی */
+        @font-face {
+            font-family: 'Vazirmatn';
+            font-style: normal;
+            font-weight: 100 900;
+            font-display: swap;
+            src: url('./assets/vazirmatn-latin.woff2') format('woff2');
+            unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+        }
+
+        :root {
+            --bg-dark: #09090b; /* Zinc 950 */
+            --glass-bg: rgba(24, 24, 27, 0.88);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --edge-color: #60a5fa;
+            --graph-tx: 0px;
+            --graph-ty: 0px;
+            --graph-scale: 1;
+        }
+        
+        *, *::before, *::after {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none !important;
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            -webkit-touch-callout: none !important;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            overflow: hidden;
+            background: var(--bg-dark);
+        }
+        
+        /* Modern Ambient Background Glows */
+        .glow-blob { position: fixed; border-radius: 50%; filter: blur(120px); z-index: 0; opacity: 0.45; pointer-events: none; }
+        .glow-1 { top: -15%; right: -5%; width: 50vw; height: 50vw; background: rgba(99, 102, 241, 0.15); }
+        .glow-2 { bottom: -10%; left: -10%; width: 60vw; height: 60vw; background: rgba(16, 185, 129, 0.1); }
+        .glow-3 { top: 30%; left: 20%; width: 40vw; height: 40vw; background: rgba(236, 72, 153, 0.08); }
+
+        #mynetwork {
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            position: relative;
+            z-index: 10;
+            outline: none;
+            transform-origin: 50% 50%;
+            transform: translate3d(var(--graph-tx), var(--graph-ty), 0) scale(var(--graph-scale));
+            /* زمان‌بندی و منحنی کاملاً هماهنگ با حرکت پنجره مفاهیم (0.42s) برای شروع و پایان همزمان */
+            transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+            will-change: transform;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+        /* در حالت ترکینگ زنده (هنگام باز/بسته شدن آکاردئون یا کشیدن پنجره با انگشت) ترنزیشن CSS خاموش می‌شود تا بدون یک میلی‌ثانیه تاخیر، فریم‌به‌فریم با پنجره حرکت کند */
+        body.graph-live-sync #mynetwork {
+            transition: none !important;
+        }
+        
+        /* Ultra Modern Modal Styles */
+        #edge-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.35s ease;
+            padding: 20px;
+        }
+        #edge-modal.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        /* Modal Layout with Side Nodes (Desktop) */
+        .modal-layout {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 1100px;
+            gap: 0;
+            transform: translate3d(0, 20px, 0) scale(0.95);
+            transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+            will-change: transform;
+        }
+        #edge-modal.show .modal-layout {
+            transform: translate3d(0, 0, 0) scale(1);
+        }
+
+        .side-node {
+            background: rgba(255, 255, 255, 0.04); 
+            padding: 16px 28px;
+            border-radius: 16px;
+            color: #f8fafc;
+            font-size: 15px;
+            font-weight: 500;
+            white-space: nowrap;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .connecting-line {
+            height: 2px;
+            width: 50px; 
+            transition: all 0.3s ease;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        /* نمایش گرافیکی افقی ضلع در بالای پنجره موبایل (بیرون پنجره، بالای دستگیره) */
+        .mobile-edge-graphic {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 360px;
+            margin: 0 auto 10px auto;
+            padding: 0 14px;
+            pointer-events: none;
+        }
+        .mobile-edge-node {
+            background: rgba(24, 24, 27, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 7px 14px;
+            border-radius: 12px;
+            color: #f8fafc;
+            font-size: 12.5px;
+            font-weight: 500;
+            white-space: nowrap;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .mobile-edge-line-wrap {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            min-width: 64px;
+        }
+        .mobile-edge-line {
+            width: 100%;
+            height: 2px;
+            background: var(--edge-color);
+            box-shadow: 0 0 10px var(--edge-color);
+        }
+        .mobile-edge-spindle {
+            position: absolute;
+            width: 44px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            filter: drop-shadow(0 0 8px var(--edge-color));
+        }
+        .mobile-edge-spindle svg {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+        }
+
+        .modal-content {
+            background: var(--glass-bg); 
+            border-radius: 20px;
+            padding: 28px 32px;
+            flex: 1;
+            max-width: 650px;
+            max-height: 82vh;
+            max-height: 82dvh;
+            overflow-y: auto;
+            color: #fff;
+            position: relative;
+            z-index: 2;
+        }
+
+        .sheet-handle-area {
+            display: none;
+            width: 100%;
+            padding: 6px 0 12px 0;
+            cursor: grab;
+            touch-action: none;
+        }
+        .sheet-handle {
+            width: 42px;
+            height: 4.5px;
+            background: rgba(255, 255, 255, 0.25);
+            border-radius: 4px;
+            margin: 0 auto;
+        }
+        
+        .modal-header {
+            display: none;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        
+        /* Accordion Styles */
+        .accordion-item {
+            background: rgba(255, 255, 255, 0.025);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            margin-bottom: 8px;
+            overflow: hidden;
+            transition: background 0.3s ease, border-color 0.3s ease;
+            cursor: pointer;
+        }
+        .accordion-item:last-child {
+            margin-bottom: 0;
+        }
+        .accordion-item:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.09);
+        }
+        
+        .accordion-header {
+            padding: 16px 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #e2e8f0;
+        }
+        .accordion-header::after {
+            content: '＋';
+            font-size: 14px;
+            color: #64748b;
+            transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .accordion-item.active .accordion-header::after {
+            content: '−';
+            transform: rotate(180deg);
+            color: #f8fafc;
+        }
+        
+        /* استفاده از CSS Grid برای انیمیشن باز و بسته شدن آکاردئون‌ها تا ارتفاع واقعی در هر میلی‌ثانیه بدون تاخیر تغییر کند */
+        .accordion-body-wrapper {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .accordion-item.active .accordion-body-wrapper {
+            grid-template-rows: 1fr;
+        }
+        .accordion-body {
+            min-height: 0;
+            overflow: hidden;
+            padding: 0 20px;
+            transition: padding 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+            font-size: 13.5px;
+            line-height: 2.2;
+            text-align: justify;
+            color: #cbd5e1;
+            cursor: pointer;
+        }
+        .accordion-item.active .accordion-body {
+            padding: 0 20px 20px 20px;
+        }
+        
+        /* لایه برندینگ پایین صفحه به همراه افکت نوری نقره‌ای شتاب‌دار (سبک Analyzing / Thinking چت‌جی‌پی‌تی) هر ۷ ثانیه یک‌بار */
+        .brand-logo { 
+            position: fixed;
+            bottom: 26px;
+            left: 36px; 
+            font-size: 13px;
+            font-weight: 500; 
+            z-index: 500;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .brand-title {
+            position: relative;
+            display: inline-block;
+            background: linear-gradient(
+                110deg,
+                #71717a 0%,
+                #71717a 38%,
+                #d4d4d8 46%,
+                #ffffff 50%,
+                #d4d4d8 54%,
+                #71717a 62%,
+                #71717a 100%
+            );
+            background-size: 300% 100%;
+            background-position: 140% 50%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            -webkit-text-fill-color: transparent;
+            animation: silverShimmerSweep 9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+        .brand-dot {
+            color: #3f3f46;
+            margin-bottom: 2px;
+        }
+        .brand-manifest {
+            position: relative;
+            display: inline-block;
+            letter-spacing: 5px;
+            font-weight: 300;
+            font-family: 'Vazirmatn', sans-serif;
+            font-size: 12px;
+            background: linear-gradient(
+                110deg,
+                #52525b 0%,
+                #52525b 38%,
+                #d4d4d8 46%,
+                #ffffff 50%,
+                #d4d4d8 54%,
+                #52525b 62%,
+                #52525b 100%
+            );
+            background-size: 300% 100%;
+            background-position: 140% 50%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            -webkit-text-fill-color: transparent;
+            animation: silverShimmerSweep 9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+            animation-delay: 0.14s;
+        }
+
+        @keyframes silverShimmerSweep {
+            0%, 80% {
+                background-position: 140% 50%;
+                filter: drop-shadow(0 0 0px rgba(255, 255, 255, 0));
+            }
+            88% {
+                filter: drop-shadow(0 0 7px rgba(255, 255, 255, 0.32));
+            }
+            96%, 100% {
+                background-position: -60% 50%;
+                filter: drop-shadow(0 0 0px rgba(255, 255, 255, 0));
+            }
+        }
+
+        .modal-content::-webkit-scrollbar { width: 4px; }
+        .modal-content::-webkit-scrollbar-track { 
+            background: transparent; 
+            margin-top: 14px;
+            margin-bottom: 14px;
+        }
+        .modal-content::-webkit-scrollbar-thumb { 
+            background: rgba(255,255,255,0.12); 
+            border-radius: 10px; 
+        }
+        .modal-content::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.22); }
+
+        /* Responsive Mobile View: Dynamic Live-Synced Zoom-Out Above Modal */
+        @media (max-width: 768px) {
+            /* در موبایل: معماری پرداختن در گوشه راست و MANIFEST در گوشه چپ همان لایه */
+            .brand-logo {
+                bottom: 16px;
+                left: 20px;
+                right: 20px;
+                justify-content: space-between;
+                font-size: 11.5px;
+            }
+            .brand-dot {
+                display: none;
+            }
+            .brand-manifest {
+                font-size: 10.5px;
+                letter-spacing: 3.5px;
+            }
+
+            /* شفاف نگه داشتن بالای صفحه در موبایل برای دید کامل به گراف زوم‌اوت شده */
+            #edge-modal {
+                padding: 0;
+                align-items: flex-end;
+                background: linear-gradient(to bottom, rgba(9, 9, 11, 0) 0%, rgba(9, 9, 11, 0.04) 28%, rgba(9, 9, 11, 0.82) 55%);
+                backdrop-filter: none;
+                -webkit-backdrop-filter: none;
+            }
+            .modal-layout {
+                flex-direction: column;
+                justify-content: flex-end;
+                max-width: 100%;
+                transform: translate3d(0, 100%, 0);
+                transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+            }
+            #edge-modal.show .modal-layout {
+                transform: translate3d(0, 0, 0);
+            }
+            .side-node, .connecting-line {
+                display: none;
+            }
+            .mobile-edge-graphic {
+                display: flex;
+            }
+            .sheet-handle-area {
+                display: block;
+            }
+            .modal-content {
+                max-width: 100%;
+                width: 100%;
+                /* ارتفاع بیشتر برای پنجره در موبایل تا هم بلندتر و خواناتر باشد و هم آیتم‌ها فضای کافی داشته باشند */
+                max-height: 72dvh;
+                border-radius: 24px 24px 0 0;
+                border-bottom: none !important;
+                border-left: none !important;
+                border-right: none !important;
+                /* پدینگ متناسب با افزایش فاصله پایین‌ترین برگه از لبه اسکرین */
+                padding: 10px 20px max(34px, env(safe-area-inset-bottom, 24px)) 20px;
+                background: rgba(20, 20, 24, 0.95);
+                backdrop-filter: blur(18px);
+                -webkit-backdrop-filter: blur(18px);
+                overscroll-behavior-y: contain;
+            }
+            .modal-content::-webkit-scrollbar-track {
+                margin-top: 24px;
+                margin-bottom: 24px;
+            }
+            .accordion-header {
+                padding: 14px 16px;
+                font-size: 13.5px;
+            }
+            .accordion-body {
+                padding: 0 16px;
+                font-size: 13px;
+                line-height: 2.1;
+            }
+            .accordion-item.active .accordion-body {
+                padding: 0 16px 16px 16px;
+            }
+        }
+    </style>
+</head>
+<body onselectstart="return false">
+
+    <div class="glow-blob glow-1"></div>
+    <div class="glow-blob glow-2"></div>
+    <div class="glow-blob glow-3"></div>
+
+    <div class="brand-logo">
+        <span class="brand-title">معماری پرداختن</span>
+        <span class="brand-dot">.</span>
+        <span class="brand-manifest">MANIFEST</span>
+    </div>
+
+    <div id="mynetwork"></div>
+
+    <div id="edge-modal" onclick="closeModal(event)">
+        <div class="modal-layout" id="modal-layout">
+            <!-- نمایش گرافیکی افقی ضلع در بالای پنجره موبایل (بیرون پنجره با فضای بازتر) -->
+            <div class="mobile-edge-graphic" id="mobile-edge-graphic">
+                <div class="mobile-edge-node">
+                    <span id="mobile-node-from">مبدا</span>
+                </div>
+                <div class="mobile-edge-line-wrap">
+                    <div class="mobile-edge-line" id="mobile-edge-line"></div>
+                    <div class="mobile-edge-spindle" id="mobile-edge-spindle">
+                        <svg viewBox="-32 -14 64 28" preserveAspectRatio="none">
+                            <path id="mobile-spindle-path" d="M -30 0 C -13 0, -10 -11, 0 -11 C 10 -11, 13 0, 30 0 C 13 0, 10 11, 0 11 C -10 11, -13 0, -30 0 Z" fill="#60a5fa"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="mobile-edge-node">
+                    <span id="mobile-node-to">مقصد</span>
+                </div>
+            </div>
+
+            <div class="side-node" id="modal-node-from">مبدا</div>
+            <div class="connecting-line" id="line-from"></div>
+            
+            <div class="modal-content" id="modal-content-box">
+                <div class="sheet-handle-area" id="sheet-handle-area">
+                    <div class="sheet-handle"></div>
+                </div>
+                <div id="accordion-container"></div>
+            </div>
+            
+            <div class="connecting-line" id="line-to"></div>
+            <div class="side-node" id="modal-node-to">مقصد</div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        // تنظیم داینامیک URL کامل تصویر تامبنیل برای شبکه‌های اجتماعی
+        (function setAbsoluteOgImage() {
+            try {
+                var fullImgUrl = new URL('./preview.png', window.location.href).href;
+                var ogImg = document.querySelector('meta[property="og:image"]');
+                var twImg = document.querySelector('meta[name="twitter:image"]');
+                if (ogImg) ogImg.setAttribute('content', fullImgUrl);
+                if (twImg) twImg.setAttribute('content', fullImgUrl);
+            } catch (e) {}
+        })();
+
+        const essayChunks = [
+            { title: "فراخوانی وضعیت", text: "معماری در هر اراده‌ورزی برای فراخوانی یک وضعیت حضور دارد. و نقش معمار از صرفاً ساختن، به «تألیفِ فرایند» گسترش می‌یابد." },
+            { title: "تألیفِ فرایند", text: "این تألیف، یک آفرینش آگاهانه است که شباهت بسیاری به کدنویسی دارد، اما از صفر؛ جایی که هیچ زبانِ پیش‌فرض یا سبک آماده‌ای وجود ندارد. معمار با تکیه بر دانشی پویا و تلاش فکری منحصربه‌فرد، دیگر راه‌حل را از انباشت حافظه‌ی خود یا سبک‌های آماده فراخوانی نمی‌کند." },
+            { title: "واقعیت پویا", text: "اگر واقعیتی که با آن کار می‌کنیم، پویاست، دیگر دیوارهای محیط مصنوع، عناصری منفعل نیستند. همان‌طور که در استعاره‌ی بازی «پک‌من»، ویژگی‌ها و نسبت‌های دیوارها در تعیین وضعیت جاری مؤثرند، در تولیدِ واقعیت نیز سهم دارند." },
+            { title: "معماریِ پرداختن", text: "بر این بستر، معماریِ پرداختن، یک تنظیم موقعیت و زاویه‌ی نگاه، برای جستجو در ریشه‌هاست. وقتی با مسأله به عنوان محصولِ موضوعی مهم‌تر مواجهه کنیم، اطلاعاتی بنیادین دریافت می‌کنیم." },
+            { title: "کنش بکر در طبیعت", text: "معماری یک کنش بکر و بنیادین در بدنه‌ی طبیعت است؛ نه یک واکنش. ما می‌پردازیم (متد) تا وضعیت‌های مطلوب را فراخوانی کنیم (هدف)." },
+            { title: "مهندسیِ مواجهه و تمرکز", text: "در این متد، «تمرکز» گران‌بهاترین سرمایه‌ی مستقیم انسان در فرایند معماری است. زیرا نحوه‌ی پرداختن ما، تاثیر قدرتمندتری از خود پدیده در درک واقعیت دارد." },
+            { title: "هندسه‌ی معرفتی", text: "هندسه‌ی معرفتی ما هرگز خودِ پدیده‌ی واقعیت را به طور مطلق درک نمی‌کند، بلکه همواره روایتی ثانویه از آن می‌سازد. در معماری هم «زاویه دید مؤلف» بخشی از واقعیت اثر است." },
+            { title: "پردازش طیفی", text: "از آن‌جا که واقعیت بیرونی پویاست، ابزار درونی ما نیز می‌تواند طیفی و غیرخطی باشد. ذهن معمار در این مرحله یک آزمایشگاه است که منطقِ پردازش در آن، نه صفر و یک، بلکه کار با طیف‌ها (Gradients) است." },
+            { title: "ایده به مثابه وضعیت", text: "در این سازه‌ی فکری، ایده دیگر یک شکل نیست؛ بلکه یک وضعیت هندسی از روابط میان پدیده‌هاست. «وضعیت»، یک پدیده‌ی صلب نیست؛ یک هارمونی از نیروهاست که معمار آن را رهبری می‌کند." },
+            { title: "هوشیاری شناسنده", text: "در پردازش فاصله‌ها و نسبت‌های فعال در شبکه‌ی پیچیده‌ی واقعیت، هوشیاریِ شناسنده حیاتی است. اگر داوطلبانه برای هر پدیده مراسم نام‌گذاری برگزار نکنیم، ذهنِ الگویاب مفاهیم را با برچسب‌های عاریتی وارد طراحی می‌کند." },
+            { title: "ادبیات پیش از زبان", text: "زبان‌های قراردادی تقلیل‌گرند؛ درحالی که معماری باید یک پل ادراکی مستقیم باشد. در پردازشِ بکر، از چارچوب زبانی رها می‌شویم و نرم‌افزار ادبیات را بی‌واسطه بر سخت‌افزار فضا اجرا می‌کنیم." },
+            { title: "فرم، بخشی از محصول", text: "در همین گام است که فرم متولد می‌شود؛ نه به عنوان هدف، بلکه به عنوان بخشی از محصول. فرم به عنوان رابط کاربری (UI) برای آن کدهای پیچیده‌ی معنایی است که سیستم را فعال نگاه می‌دارند." },
+            { title: "امنیت حسی", text: "اگر UI کارا نباشد، کاربر امنیت حسی خود را از دست داده یا دچار سرریز شناختی می‌شود. امنیت حسی، امکانی است برای کاهش پارازیت‌ها و افزایش شفافیت پیام، تا مغز کاربر بتواند لایه‌های عمیق‌تر واقعیت را پردازش کند." },
+            { title: "اراده‌ورزی برای ساختنِ فردا", text: "معماری برای حال نیست؛ برای آینده است. هدف نیز، «افزودن» یک شیء به فردا نیست؛ هدف ساختنِ فردا از طریقِ اراده‌ورزیِ مسئولانه است. معمار از عجله برای بستن پرونده پرهیز می‌کند." },
+            { title: "گریز از نزدیک‌بینی", text: "آشفتگی موجود در محیط مصنوع، ناشی از «منطق پردازش ناموفق» است. انتخاب ما برای پرداختن به «هسته» و عبور از پوسته، یک گریز از نزدیک‌بینیِ تاریخی است." },
+            { title: "سهم از رخداد واقعیت", text: "تلاش ما در این سفر اکتشافی به هسته‌ی معماری، پذیرش مسئولیت در برابر واقعیت تولید شده است. این سهم از رخداد واقعیت مستقیم بر کیفیت بودن انسان اثر می‌گذارد." }
+        ];
+
+        // مختصات دوگانه: افقی (Desktop) و عمودی (Mobile)
+        // در هر دو نما، گراف ۱۵٪ جمع‌وجورتر و به اندازه ۲۶ پیکسل بالاتر شیفت داده شده تا کاملاً پایدار، بدون تکان و با تعادل بصری بی‌نقص در مرکز دید مستقر شود
+        const baseNodes = [
+            { id: 6, label: 'طبیعت و بستر', hex: '#fbbf24',
+              desktop: { x: 340, y: -154, vadjust: -38 },
+              mobile:  { x: 89,  y: -271, vadjust: -42 } },
+            { id: 1, label: 'هسته مانیفست', hex: '#60a5fa',
+              desktop: { x: 128, y: -26,  vadjust: -38 }, // انتقال عنوان هسته مانیفست به بالای گره در لپ‌تاپ جهت عدم تداخل با مسیر زیرین
+              mobile:  { x: 0,   y: -137, vadjust: -42 } },
+            { id: 5, label: 'آینده و مسئولیت', hex: '#34d399',
+              desktop: { x: 213, y: 161,  vadjust: 4 },
+              mobile:  { x: 111, y: -11,  vadjust: -2 } },
+            { id: 2, label: 'هندسه معرفتی', hex: '#c084fc',
+              desktop: { x: -153, y: -86, vadjust: -38 },
+              mobile:  { x: -94,  y: 0,   vadjust: -42 } },
+            { id: 4, label: 'آسیب‌شناسی', hex: '#f87171',
+              desktop: { x: -255, y: 110, vadjust: 4 },
+              mobile:  { x: 77,   y: 150, vadjust: -2 } },
+            { id: 3, label: 'رابط کاربری', hex: '#fb923c',
+              desktop: { x: -425, y: -1,  vadjust: -38 },
+              mobile:  { x: -102, y: 204, vadjust: -2 } }
+        ];
+
+        const edgesData = [
+            {id: 'e6', from: 6, to: 1, titlePath: 'تأثیر بستر بر هسته', chunks: [essayChunks[2], essayChunks[4], essayChunks[5]], rawColor: '#fbbf24'},
+            {id: 'e1', from: 1, to: 2, titlePath: 'انتقال اراده به ذهن', chunks: [essayChunks[0], essayChunks[1], essayChunks[3]], rawColor: '#60a5fa'},
+            {id: 'e2', from: 2, to: 3, titlePath: 'تبلور ذهنی در فرم', chunks: [essayChunks[6], essayChunks[7], essayChunks[8]], rawColor: '#c084fc'},
+            {id: 'e3', from: 3, to: 4, titlePath: 'آسیب‌های فرم ناکارآمد', chunks: [essayChunks[10], essayChunks[11], essayChunks[12]], rawColor: '#fb923c'},
+            {id: 'e4', from: 4, to: 2, titlePath: 'بازخورد آسیب‌ها بر ذهن', chunks: [essayChunks[9], essayChunks[14]], rawColor: '#f87171'},
+            {id: 'e5', from: 1, to: 5, titlePath: 'جهش از هسته به آینده', chunks: [essayChunks[13], essayChunks[15]], rawColor: '#34d399'}
+        ];
+
+        var isMiniatureMode = false;
+        var activeEdgeId = null;
+        var pulseAnimFrame = null;
+
+        // مدیریت سیکل هوشمند و متناوب افکت دعوت به لمس (۴.۶ ثانیه در ورود، سپس سیکل‌های ۶ ثانیه سکون و ۳ ثانیه افکت)
+        var affordanceStartTime = null;
+        var affordanceCurrentDuration = 4600;
+        var affordanceAnimFrame = null;
+        var affordanceIdleTimer = null;
+
+        function mixHexWithWhite(hex, ratio) {
+            var c = hex.replace('#', '');
+            var r = parseInt(c.substring(0, 2), 16);
+            var g = parseInt(c.substring(2, 4), 16);
+            var b = parseInt(c.substring(4, 6), 16);
+            r = Math.round(r + (255 - r) * ratio);
+            g = Math.round(g + (255 - g) * ratio);
+            b = Math.round(b + (255 - b) * ratio);
+            return 'rgb(' + r + ',' + g + ',' + b + ')';
+        }
+
+        function hexToRgb(hex) {
+            var c = hex.replace('#', '');
+            if (c.length === 3) c = c.split('').map(function(x){ return x + x; }).join('');
+            return {
+                r: parseInt(c.substring(0, 2), 16) || 0,
+                g: parseInt(c.substring(2, 4), 16) || 0,
+                b: parseInt(c.substring(4, 6), 16) || 0
+            };
+        }
+
+        function hexToRgba(hex, alpha) {
+            var rgb = hexToRgb(hex);
+            return 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',' + alpha.toFixed(3) + ')';
+        }
+
+        function stopAffordanceCycle() {
+            if (affordanceIdleTimer) {
+                clearTimeout(affordanceIdleTimer);
+                affordanceIdleTimer = null;
+            }
+            if (affordanceAnimFrame) {
+                cancelAnimationFrame(affordanceAnimFrame);
+                affordanceAnimFrame = null;
+            }
+            affordanceStartTime = null;
+        }
+
+        function scheduleNextAffordanceWave(delayMs, waveDurationMs) {
+            stopAffordanceCycle();
+            affordanceIdleTimer = setTimeout(function() {
+                affordanceIdleTimer = null;
+                if (isMiniatureMode || activeEdgeId || document.getElementById('edge-modal').classList.contains('show')) {
+                    return;
+                }
+                runAffordanceWave(waveDurationMs);
+            }, delayMs);
+        }
+
+        function runAffordanceWave(durationMs) {
+            stopAffordanceCycle();
+            if (isMiniatureMode || activeEdgeId || document.getElementById('edge-modal').classList.contains('show')) {
+                return;
+            }
+            affordanceCurrentDuration = durationMs;
+            affordanceStartTime = performance.now();
+
+            function stepAffordance(now) {
+                if (isMiniatureMode || activeEdgeId || document.getElementById('edge-modal').classList.contains('show')) {
+                    stopAffordanceCycle();
+                    return;
+                }
+                var elapsed = now - affordanceStartTime;
+                if (elapsed < affordanceCurrentDuration) {
+                    if (network) network.redraw();
+                    affordanceAnimFrame = requestAnimationFrame(stepAffordance);
+                } else {
+                    affordanceStartTime = null;
+                    affordanceAnimFrame = null;
+                    if (network) network.redraw();
+                    // پس از پایان افکت، ۶ ثانیه سکون و سپس اجرای مجدد سیکل کوتاه ۳ ثانیه‌ای
+                    scheduleNextAffordanceWave(6000, 3000);
+                }
+            }
+            affordanceAnimFrame = requestAnimationFrame(stepAffordance);
+        }
+
+        function startPulseLoop() {
+            if (pulseAnimFrame) cancelAnimationFrame(pulseAnimFrame);
+            function step() {
+                if (!activeEdgeId) {
+                    pulseAnimFrame = null;
+                    return;
+                }
+                if (network) network.redraw();
+                pulseAnimFrame = requestAnimationFrame(step);
+            }
+            pulseAnimFrame = requestAnimationFrame(step);
+        }
+
+        function stopPulseLoop() {
+            activeEdgeId = null;
+            if (pulseAnimFrame) {
+                cancelAnimationFrame(pulseAnimFrame);
+                pulseAnimFrame = null;
+            }
+            if (network) network.redraw();
+        }
+
+        function isPortraitMode() {
+            return window.innerHeight > window.innerWidth || window.innerWidth <= 768;
+        }
+
+        function getNodesForViewport() {
+            const portrait = isPortraitMode();
+            return baseNodes.map(node => {
+                const pos = portrait ? node.mobile : node.desktop;
+                return {
+                    id: node.id,
+                    label: node.label,
+                    fullLabel: node.label,
+                    hexColor: node.hex,
+                    x: pos.x,
+                    y: pos.y,
+                    font: { vadjust: pos.vadjust },
+                    color: {
+                        background: 'rgba(0,0,0,0)',
+                        border: 'rgba(0,0,0,0)',
+                        hover: { background: 'rgba(0,0,0,0)', border: 'rgba(0,0,0,0)' },
+                        highlight: { background: 'rgba(0,0,0,0)', border: 'rgba(0,0,0,0)' }
+                    }
+                };
+            });
+        }
+
+        edgesData.forEach(edge => {
+            edge.color = { color: 'rgba(0,0,0,0)', highlight: 'rgba(0,0,0,0)', hover: 'rgba(0,0,0,0)', inherit: false, opacity: 0 };
+        });
+
+        // در چیدمان عمودی (موبایل)، دو سر مسیر بنفش تقریباً در یک راستای عمودی قرار می‌گیرند و منحنی معمولی صاف دیده می‌شود؛
+        // بنابراین در حالت پرتره یک انحنای کمانی ملایم و هماهنگ به سمت مرکز گراف برای آن تنظیم می‌شود
+        var DEFAULT_EDGE_SMOOTH = { enabled: true, type: 'cubicBezier', roundness: 0.5 };
+        var PORTRAIT_EDGE_SMOOTH_OVERRIDES = {
+            'e2': { enabled: true, type: 'curvedCW', roundness: 0.26 }
+        };
+
+        function getEdgeSmoothForViewport(edgeId) {
+            if (isPortraitMode() && PORTRAIT_EDGE_SMOOTH_OVERRIDES[edgeId]) {
+                return PORTRAIT_EDGE_SMOOTH_OVERRIDES[edgeId];
+            }
+            return DEFAULT_EDGE_SMOOTH;
+        }
+
+        edgesData.forEach(edge => {
+            edge.smooth = getEdgeSmoothForViewport(edge.id);
+        });
+
+        function applyEdgeSmoothingForViewport() {
+            if (typeof edgesDataSet === 'undefined' || !edgesDataSet) return;
+            edgesDataSet.update(edgesData.map(function(edge) {
+                return { id: edge.id, smooth: getEdgeSmoothForViewport(edge.id) };
+            }));
+        }
+
+        var network = null;
+        var nodesDataSet = new vis.DataSet(getNodesForViewport());
+        var edgesDataSet = new vis.DataSet(edgesData);
+        
+        var hoveredEdgeId = null;
+        var edgeScales = {};
+        var lastModalOpenTime = 0;
+
+        // محاسبه دقیق کادر دربرگیرنده (Bounding Box) گراف فعلی روی صفحه برای جایگذاری بی‌نقص در فضای خالی بالای پنجره
+        var graphBaseBBox = null;
+
+        function measureGraphBaseBBox() {
+            if (!network) return null;
+            var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            baseNodes.forEach(function(n) {
+                var domPt = network.canvasToDOM({ x: n.mobile.x, y: n.mobile.y });
+                if (domPt.x < minX) minX = domPt.x;
+                if (domPt.x > maxX) maxX = domPt.x;
+                if (domPt.y < minY) minY = domPt.y;
+                if (domPt.y > maxY) maxY = domPt.y;
+            });
+            var pad = 22;
+            minX -= pad; maxX += pad;
+            minY -= pad; maxY += pad;
+            return {
+                minX: minX, maxX: maxX,
+                minY: minY, maxY: maxY,
+                width: Math.max(1, maxX - minX),
+                height: Math.max(1, maxY - minY),
+                centerX: (minX + maxX) * 0.5,
+                centerY: (minY + maxY) * 0.5
+            };
+        }
+
+        // تنظیم هوشمند و لحظه‌ای موقعیت و زوم گراف متناسب با فضای خالی بالای پنجره در موبایل
+        function syncGraphToAvailableSpace(extraBottomOffset) {
+            if (!isMiniatureMode || window.innerWidth > 768) return;
+            var vh = window.innerHeight;
+            var vw = window.innerWidth;
+
+            if (!graphBaseBBox) {
+                graphBaseBBox = measureGraphBaseBBox();
+            }
+            if (!graphBaseBBox) return;
+
+            var modalBox = document.getElementById('modal-content-box');
+            var mobileGraphic = document.getElementById('mobile-edge-graphic');
+
+            var modalH = modalBox ? modalBox.offsetHeight : (vh * 0.5);
+            var graphicH = (mobileGraphic && mobileGraphic.offsetHeight) ? (mobileGraphic.offsetHeight + 10) : 44;
+
+            var swipeOffset = extraBottomOffset || 0;
+            var occupiedBottom = Math.max(0, modalH + graphicH - swipeOffset);
+
+            var topSafeMargin = 14;
+            var bottomSafeGap = 12;
+            var availH = Math.max(54, vh - occupiedBottom - topSafeMargin - bottomSafeGap);
+            var availW = vw * 0.88;
+
+            var scaleH = availH / graphBaseBBox.height;
+            var scaleW = availW / graphBaseBBox.width;
+            // اعمال ضریب ۰.۹ (۱۰ درصد کوچکتر) برای حفظ حاشیه امن و تنفس بصری بهتر در وضعیت‌های مختلف زوم
+            var targetScale = Math.min(scaleH, scaleW, 0.58) * 0.90;
+            targetScale = Math.max(0.13, targetScale);
+
+            var targetCenterY = topSafeMargin + (availH * 0.5);
+            var targetCenterX = vw * 0.5;
+
+            var vcx = vw * 0.5;
+            var vcy = vh * 0.5;
+
+            var tx = targetCenterX - vcx - (graphBaseBBox.centerX - vcx) * targetScale;
+            var ty = targetCenterY - vcy - (graphBaseBBox.centerY - vcy) * targetScale;
+
+            document.documentElement.style.setProperty('--graph-tx', tx.toFixed(2) + 'px');
+            document.documentElement.style.setProperty('--graph-ty', ty.toFixed(2) + 'px');
+            document.documentElement.style.setProperty('--graph-scale', targetScale.toFixed(4));
+        }
+
+        // حلقه سبک و یکپارچه همگام‌سازی زنده گراف با حرکت آکاردئون‌ها (تضمین صفر میلی‌ثانیه تاخیر)
+        var liveSyncRafId = null;
+        var liveSyncEndTime = 0;
+
+        function triggerLiveGraphSync(durationMs) {
+            if (!isMiniatureMode || window.innerWidth > 768) return;
+            document.body.classList.add('graph-live-sync');
+            var now = performance.now();
+            liveSyncEndTime = Math.max(liveSyncEndTime, now + durationMs);
+
+            if (liveSyncRafId) return;
+
+            function stepSync(ts) {
+                if (!isMiniatureMode) {
+                    document.body.classList.remove('graph-live-sync');
+                    liveSyncRafId = null;
+                    return;
+                }
+                syncGraphToAvailableSpace(0);
+                if (ts < liveSyncEndTime) {
+                    liveSyncRafId = requestAnimationFrame(stepSync);
+                } else {
+                    liveSyncRafId = null;
+                    document.body.classList.remove('graph-live-sync');
+                }
+            }
+            liveSyncRafId = requestAnimationFrame(stepSync);
+        }
+
+        function triggerOpenModal(edgeData) {
+            if (!edgeData) return;
+            var now = Date.now();
+            if (now - lastModalOpenTime < 250) return;
+            lastModalOpenTime = now;
+            openModal(edgeData);
+            if (network) {
+                network.unselectAll();
+            }
+        }
+
+        // بررسی قرارگیری نقطه در شعاع غیرقابل کلیک پیرامون هر یک از گره‌های گراف (برای تمرکز کاربر بر مطالعه روابط و مسیرها)
+        var NODE_DEAD_ZONE_RADIUS = 50;
+
+        function getNodeInDeadZone(domX, domY) {
+            if (!network || !network.body || !network.body.nodes) return null;
+            for (var i = 0; i < baseNodes.length; i++) {
+                var nId = baseNodes[i].id;
+                var visNode = network.body.nodes[nId];
+                if (visNode && typeof visNode.x === 'number' && typeof visNode.y === 'number') {
+                    var nodeDOM = network.canvasToDOM({ x: visNode.x, y: visNode.y });
+                    var dist = Math.hypot(domX - nodeDOM.x, domY - nodeDOM.y);
+                    if (dist <= NODE_DEAD_ZONE_RADIUS) {
+                        return nId;
+                    }
+                }
+            }
+            return null;
+        }
+
+        function isPointInNodeDeadZone(domX, domY) {
+            return getNodeInDeadZone(domX, domY) !== null;
+        }
+
+        // سیستم تعاملی حیات گراف: سر خوردن گره روی رئوس مثلث و انتشار موج به سمت میان‌مسیر
+        var edgeWiggleStates = {};
+        var wiggleAnimFrame = null;
+
+        // مختصات مرجع گره در ویوپورت فعلی
+        function getNodeHomePos(nodeId) {
+            var portrait = isPortraitMode();
+            var node = baseNodes.find(function(n) { return n.id === nodeId; });
+            if (!node) return { x: 0, y: 0 };
+            var pos = portrait ? node.mobile : node.desktop;
+            return { x: pos.x, y: pos.y };
+        }
+
+        // شعاع جابجایی بسیار ریز و ظریف روی ستاره پنج‌پر (حدود ۵.۸ پیکسل)
+        var NODE_DODGE_RADIUS = 5.8;
+        var nodeVertexIndices = {};
+        var nodeDodgeStates = {};
+
+        function getNodeStarVertex(nodeId, k) {
+            var home = getNodeHomePos(nodeId);
+            var baseAngle = -Math.PI / 2 + (nodeId * 0.72); // زاویه متوازن و جهت‌گیری ستاره اختصاصی برای هر گره
+            var angle = baseAngle + (k * (2 * Math.PI / 5));
+            return {
+                x: home.x + NODE_DODGE_RADIUS * Math.cos(angle),
+                y: home.y + NODE_DODGE_RADIUS * Math.sin(angle)
+            };
+        }
+
+        function triggerNodeDodge(nodeId) {
+            var visNode = network && network.body && network.body.nodes && network.body.nodes[nodeId];
+            if (!visNode) return;
+
+            if (nodeVertexIndices[nodeId] === undefined) {
+                nodeVertexIndices[nodeId] = 0;
+            }
+            // حرکت ستاره‌ای قطری با پرش دو راسی (0 -> 2 -> 4 -> 1 -> 3 -> 0) که دقیقاً هندسه ستاره پنج‌پر را طی ۵ کلیک متوالی رسم می‌کند
+            var nextVertexIdx = (nodeVertexIndices[nodeId] + 2) % 5;
+            nodeVertexIndices[nodeId] = nextVertexIdx;
+
+            var targetPos = getNodeStarVertex(nodeId, nextVertexIdx);
+            var fromX = (typeof visNode.x === 'number') ? visNode.x : targetPos.x;
+            var fromY = (typeof visNode.y === 'number') ? visNode.y : targetPos.y;
+
+            nodeDodgeStates[nodeId] = {
+                fromX: fromX,
+                fromY: fromY,
+                targetX: targetPos.x,
+                targetY: targetPos.y,
+                startTime: performance.now(),
+                duration: 320 // حرکت فرز و قطعی گره در ۳۲۰ میلی‌ثانیه بدون تکان‌های اضافی
+            };
+        }
+
+        function easeOutCubic(x) {
+            return 1 - Math.pow(1 - x, 3);
+        }
+
+        // واکنش کامل و آنی به لمس یا فشردن گره (سر خوردن گره + انتشار موج به سمت میان‌مسیر)
+        function triggerNodeTouchResponse(nodeId) {
+            if (!nodeId) return;
+            triggerNodeDodge(nodeId);
+            triggerNodeNeighborsWiggle(nodeId);
+            if (!wiggleAnimFrame) {
+                startWiggleLoop();
+            }
+        }
+
+        function triggerNodeNeighborsWiggle(nodeId) {
+            if (!nodeId) return;
+            var connectedEdges = edgesData.filter(function(e) {
+                return e.from === nodeId || e.to === nodeId;
+            });
+            if (connectedEdges.length === 0) return;
+
+            var now = performance.now();
+            connectedEdges.forEach(function(e, idx) {
+                var isFrom = (e.from === nodeId);
+                var delay = idx * 8; // تاخیر ناچیز و طبیعی
+                var duration = 440;   // زمان انتشار موج لاستیکی سفت با میراسازی سریع و بدون تابیدگی
+                var maxAmp = 3.0 + Math.random() * 0.8; // کاهش ۴۰ درصدی دیگر تکانه و مهار کامل شلی طناب
+                var sign = (Math.random() < 0.5 ? 1 : -1);
+
+                edgeWiggleStates[e.id] = {
+                    startTime: now,
+                    delay: delay,
+                    duration: duration,
+                    maxAmp: maxAmp,
+                    sign: sign,
+                    anchorFrom: isFrom
+                };
+            });
+        }
+
+        function startWiggleLoop() {
+            if (wiggleAnimFrame) cancelAnimationFrame(wiggleAnimFrame);
+            function stepWiggle(now) {
+                var hasActive = false;
+
+                // به‌روزرسانی سر خوردن گره‌ها روی رئوس ستاره
+                for (var nId in nodeDodgeStates) {
+                    var dState = nodeDodgeStates[nId];
+                    if (dState) {
+                        var vNode = network && network.body && network.body.nodes && network.body.nodes[nId];
+                        if (vNode) {
+                            var elapsedD = now - dState.startTime;
+                            if (elapsedD < dState.duration) {
+                                var pr = elapsedD / dState.duration;
+                                var ease = easeOutCubic(pr);
+                                vNode.x = dState.fromX + (dState.targetX - dState.fromX) * ease;
+                                vNode.y = dState.fromY + (dState.targetY - dState.fromY) * ease;
+                                hasActive = true;
+                            } else {
+                                vNode.x = dState.targetX;
+                                vNode.y = dState.targetY;
+                                delete nodeDodgeStates[nId];
+                            }
+                        }
+                    }
+                }
+
+                // به‌روزرسانی نوسان موجی مسیرهای متصل
+                for (var edgeId in edgeWiggleStates) {
+                    var state = edgeWiggleStates[edgeId];
+                    if (state) {
+                        var elapsed = now - state.startTime - (state.delay || 0);
+                        if (elapsed < state.duration) {
+                            hasActive = true;
+                        } else {
+                            delete edgeWiggleStates[edgeId];
+                        }
+                    }
+                }
+
+                if (network) network.redraw();
+
+                if (hasActive) {
+                    wiggleAnimFrame = requestAnimationFrame(stepWiggle);
+                } else {
+                    wiggleAnimFrame = null;
+                    if (network) network.redraw();
+                }
+            }
+            wiggleAnimFrame = requestAnimationFrame(stepWiggle);
+        }
+
+        function getEdgeWiggleOffset(edgeId, t, now) {
+            var state = edgeWiggleStates[edgeId];
+            if (!state) return { dx: 0, dy: 0 };
+            var elapsed = now - state.startTime - (state.delay || 0);
+            if (elapsed <= 0 || elapsed >= state.duration) return { dx: 0, dy: 0 };
+
+            // s: فاصله نرمال‌شده از گره کلیک‌شده به سمت گره دورتر (0 در گره کلیک‌شده، 0.5 در غلاف میان‌مسیر، 1.0 در گره انتهایی)
+            var s = state.anchorFrom ? t : (1.0 - t);
+            if (s <= 0 || s >= 1.0) return { dx: 0, dy: 0 };
+
+            // فیزیک انتشار موج در طناب با کشسانی لاستیکی سفت (تمرکز تکانه در ابتدای مسیر و میرایی سریع پیش از میانه):
+            var T_travel = 320; // زمان سیر موج در طول مسیر با کشش بالا (میلی‌ثانیه)
+            var T_pulse = 135;  // پهنای زمانی فشرده و تیز پالس نوسان (میلی‌ثانیه)
+
+            var t_arrive = s * T_travel;
+            var tau = elapsed - t_arrive;
+
+            // اگر موج هنوز نرسیده یا کاملاً عبور کرده است، جابجایی دقیقاً صفر است (سکون قطعی و بدون لرزش)
+            if (tau <= 0 || tau >= T_pulse) return { dx: 0, dy: 0 };
+
+            var p = tau / T_pulse; // پیشرفت موضعی پالس از ۰ تا ۱
+            // شکل موج تکان طناب: یک قوس اوج و سپس یک بازگشت نرم به صفر
+            var waveShape = Math.sin(p * 2 * Math.PI) * Math.sin(p * Math.PI);
+
+            // میرایی شدید و تصاعدی در طول مسیر: تکانه فقط در مجاورت گره کلیک‌شده حس می‌شود و در ادامه سریعاً مهار شده تا از تابیدگی منحنی جلوگیری شود
+            var damp = Math.exp(-s * 5.2) * Math.pow(Math.max(0, 1.0 - s), 2.2);
+            var ramp = Math.min(1.0, s / 0.03);
+
+            var displacement = state.maxAmp * waveShape * damp * ramp * state.sign;
+
+            var visEdge = network && network.body && network.body.edges && network.body.edges[edgeId];
+            if (!visEdge || !visEdge.from || !visEdge.to) return { dx: 0, dy: 0 };
+
+            // بردار نرمال عمود بر خط واصل دو سر مسیر
+            var dx = visEdge.to.x - visEdge.from.x;
+            var dy = visEdge.to.y - visEdge.from.y;
+            var len = Math.hypot(dx, dy) || 1;
+            var nx = -dy / len;
+            var ny = dx / len;
+
+            return {
+                dx: nx * displacement,
+                dy: ny * displacement
+            };
+        }
+
+        // تشخیص دقیق نزدیک‌ترین مسیر یا پیاز به محل لمس انگشت (در مقیاس پیکسل صفحه) با رعایت شعاع غیرقابل کلیک پیرامون گره‌ها
+        function findEdgeNearScreenPoint(domX, domY) {
+            if (!network || !network.body || !network.body.edges) return null;
+            if (isPointInNodeDeadZone(domX, domY)) return null;
+
+            var bestEdgeId = null;
+            var bestOnionDist = 52;
+
+            for (var i = 0; i < edgesData.length; i++) {
+                var edge = edgesData[i];
+                var visEdge = network.body.edges[edge.id];
+                if (visEdge && visEdge.edgeType && visEdge.edgeType.getPoint) {
+                    var midCanvas = visEdge.edgeType.getPoint(0.5);
+                    var midDOM = network.canvasToDOM(midCanvas);
+                    var dist = Math.hypot(domX - midDOM.x, domY - midDOM.y);
+                    if (dist < bestOnionDist) {
+                        bestOnionDist = dist;
+                        bestEdgeId = edge.id;
+                    }
+                }
+            }
+            if (bestEdgeId) return bestEdgeId;
+
+            var bestCurveDist = 34;
+            for (var j = 0; j < edgesData.length; j++) {
+                var e = edgesData[j];
+                var vEdge = network.body.edges[e.id];
+                if (vEdge && vEdge.edgeType && vEdge.edgeType.getPoint) {
+                    for (var s = 4; s <= 21; s++) {
+                        var t = s / 25;
+                        var ptCanvas = vEdge.edgeType.getPoint(t);
+                        var ptDOM = network.canvasToDOM(ptCanvas);
+                        var d = Math.hypot(domX - ptDOM.x, domY - ptDOM.y);
+                        if (d < bestCurveDist) {
+                            bestCurveDist = d;
+                            bestEdgeId = e.id;
+                        }
+                    }
+                }
+            }
+            return bestEdgeId;
+        }
+
+        // توابع تعیین وزن و اولویت رنگ‌های شاخص (بنفش هندسه معرفتی و آبی هسته مانیفست)
+        function isDominantColor(hex) {
+            if (!hex) return false;
+            var h = hex.toLowerCase();
+            return h === '#c084fc' || h === '#60a5fa';
+        }
+
+        function getDominanceWeight(hex, nodeId) {
+            if (!hex) return 1.0;
+            var h = hex.toLowerCase();
+            // بنفش هندسه معرفتی: در گره ۲ (هندسه معرفتی) و گره ۳ سهم مسلط و سنگین دارد
+            if (h === '#c084fc') {
+                return (nodeId === 2) ? 4.2 : 3.2;
+            }
+            // آبی هسته مانیفست: در گره ۱ (هسته مانیفست) و گره ۲ سهم مسلط و سنگین دارد
+            if (h === '#60a5fa') {
+                return (nodeId === 1) ? 4.2 : 3.0;
+            }
+            return 1.0;
+        }
+
+        // رسم گره به روش نفوذ و ادغام شعاعی درونی:
+        // امواج نوری رنگ‌ها از دهانه ورود هر مسیر به سمت مرکز تابیده و در مرکز به نرمی در هم ادغام می‌شوند
+        // با اولویت و پیشروی غالب رنگ‌های «بنفش هندسه معرفتی» و «آبی هسته مانیفست» در تصاحب ناحیه مرکزی گره‌ها
+        function drawDiffuseNode(ctx, nodeId, nx, ny) {
+            var connected = edgesData.filter(function(e) {
+                return e.from === nodeId || e.to === nodeId;
+            });
+
+            var R = 8.5;
+
+            var edgeAngles = [];
+            connected.forEach(function(e) {
+                var visEdge = network && network.body && network.body.edges && network.body.edges[e.id];
+                var angle = 0;
+                if (visEdge && visEdge.edgeType && visEdge.edgeType.getPoint) {
+                    var ptNear = (e.from === nodeId) ? visEdge.edgeType.getPoint(0.06) : visEdge.edgeType.getPoint(0.94);
+                    angle = Math.atan2(ptNear.y - ny, ptNear.x - nx);
+                } else {
+                    var otherId = (e.from === nodeId) ? e.to : e.from;
+                    var otherNode = network && network.body && network.body.nodes && network.body.nodes[otherId];
+                    if (otherNode) {
+                        angle = Math.atan2(otherNode.y - ny, otherNode.x - nx);
+                    }
+                }
+                edgeAngles.push({ id: e.id, rawColor: e.rawColor, angle: angle });
+            });
+
+            var N = edgeAngles.length;
+
+            if (N === 0) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(nx, ny, R, 0, 2 * Math.PI);
+                ctx.fillStyle = (nodeId === 1) ? '#60a5fa' : ((nodeId === 2) ? '#c084fc' : '#60a5fa');
+                ctx.fill();
+                ctx.restore();
+                return;
+            }
+
+            if (N === 1) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(nx, ny, R, 0, 2 * Math.PI);
+                ctx.fillStyle = edgeAngles[0].rawColor;
+                ctx.fill();
+                ctx.restore();
+                return;
+            }
+
+            // ۱. برش دایره گره (Clipping Mask) برای اجرای ادغام لطیف درونی
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(nx, ny, R, 0, 2 * Math.PI);
+            ctx.clip();
+
+            // ۲. محاسبه رنگ ترکیبی پایه با ضریب وزنی بیشتر برای رنگ‌های غالب (بنفش هندسه معرفتی و آبی هسته مانیفست)
+            var totalWeight = 0;
+            var avgR = 0, avgG = 0, avgB = 0;
+            for (var j = 0; j < N; j++) {
+                var weight = getDominanceWeight(edgeAngles[j].rawColor, nodeId);
+                var rgb = hexToRgb(edgeAngles[j].rawColor);
+                avgR += rgb.r * weight;
+                avgG += rgb.g * weight;
+                avgB += rgb.b * weight;
+                totalWeight += weight;
+            }
+            avgR = Math.round(avgR / totalWeight);
+            avgG = Math.round(avgG / totalWeight);
+            avgB = Math.round(avgB / totalWeight);
+            var baseBlendedColor = 'rgb(' + avgR + ',' + avgG + ',' + avgB + ')';
+
+            // پر کردن کل سطح دایره با رنگ پایه زنده و بدون تیرگی
+            ctx.fillStyle = baseBlendedColor;
+            ctx.fillRect(nx - R, ny - R, R * 2, R * 2);
+
+            // ۳. مرتب‌سازی رسم لایه‌ها: رنگ‌های عادی ابتدا و رنگ‌های غالب (بنفش و آبی) روی آن‌ها رسم می‌شوند
+            // تا رنگ‌های غالب به سمت مرکز دایره پیشروی کرده و ناحیه مرکزی را تصاحب نمایند
+            var sortedEdges = edgeAngles.slice().sort(function(a, b) {
+                var wA = getDominanceWeight(a.rawColor, nodeId);
+                var wB = getDominanceWeight(b.rawColor, nodeId);
+                return wA - wB; // وزن کمتر ابتدا، وزن بیشتر (غالب) روی آن
+            });
+
+            for (var i = 0; i < sortedEdges.length; i++) {
+                var item = sortedEdges[i];
+                var a = item.angle;
+                var px = nx + R * Math.cos(a);
+                var py = ny + R * Math.sin(a);
+                var isDom = isDominantColor(item.rawColor);
+
+                if (isDom) {
+                    // رنگ‌های غالب (بنفش معرفتی و آبی مانیفست):
+                    // شعاع گسترده‌تر (2.5R) با گرادینت پرقدرت که عمیقاً به مرکز نفوذ کرده و کانون را پر می‌کند
+                    var gradDom = ctx.createRadialGradient(px, py, 0, px, py, R * 2.5);
+                    gradDom.addColorStop(0.0, hexToRgba(item.rawColor, 1.0));
+                    gradDom.addColorStop(0.35, hexToRgba(item.rawColor, 0.95));
+                    gradDom.addColorStop(0.58, hexToRgba(item.rawColor, 0.85)); // تراکم ۸۵٪ در عبور مستقیم از مرکز دایره
+                    gradDom.addColorStop(0.82, hexToRgba(item.rawColor, 0.40));
+                    gradDom.addColorStop(1.0, hexToRgba(item.rawColor, 0.0));
+                    ctx.fillStyle = gradDom;
+                    ctx.fillRect(nx - R, ny - R, R * 2, R * 2);
+                } else {
+                    // سایر رنگ‌های فرعی:
+                    // حضور ملایم در حوالی دهانه ورودی خود روی محیط بدون ادعای تسلط بر مرکز
+                    var gradReg = ctx.createRadialGradient(px, py, 0, px, py, R * 1.6);
+                    gradReg.addColorStop(0.0, hexToRgba(item.rawColor, 1.0));
+                    gradReg.addColorStop(0.32, hexToRgba(item.rawColor, 0.70));
+                    gradReg.addColorStop(0.65, hexToRgba(item.rawColor, 0.18));
+                    gradReg.addColorStop(1.0, hexToRgba(item.rawColor, 0.0));
+                    ctx.fillStyle = gradReg;
+                    ctx.fillRect(nx - R, ny - R, R * 2, R * 2);
+                }
+            }
+
+            // ۴. تثبیت هویت کانون گره‌های مانیفست و هندسه معرفتی در مرکز دایره
+            if (nodeId === 1) {
+                var bloomBlue = ctx.createRadialGradient(nx, ny, 0, nx, ny, R * 0.95);
+                bloomBlue.addColorStop(0.0, hexToRgba('#60a5fa', 0.85));
+                bloomBlue.addColorStop(0.50, hexToRgba('#60a5fa', 0.50));
+                bloomBlue.addColorStop(1.0, hexToRgba('#60a5fa', 0.0));
+                ctx.fillStyle = bloomBlue;
+                ctx.fillRect(nx - R, ny - R, R * 2, R * 2);
+            } else if (nodeId === 2) {
+                var bloomPurple = ctx.createRadialGradient(nx, ny, 0, nx, ny, R * 0.95);
+                bloomPurple.addColorStop(0.0, hexToRgba('#c084fc', 0.85));
+                bloomPurple.addColorStop(0.50, hexToRgba('#c084fc', 0.50));
+                bloomPurple.addColorStop(1.0, hexToRgba('#c084fc', 0.0));
+                ctx.fillStyle = bloomPurple;
+                ctx.fillRect(nx - R, ny - R, R * 2, R * 2);
+            }
+
+            ctx.restore();
+        }
+
+        function initGraph() {
+            if (network) return;
+            var container = document.getElementById('mynetwork');
+            var isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+
+            var options = {
+                nodes: {
+                    shape: 'dot',
+                    size: 0, 
+                    font: { size: 14, color: '#e2e8f0', face: 'Vazirmatn, Tahoma', strokeWidth: 0 },
+                    borderWidth: 0,
+                    color: {
+                        background: 'rgba(0,0,0,0)',
+                        border: 'rgba(0,0,0,0)',
+                        hover: { background: 'rgba(0,0,0,0)', border: 'rgba(0,0,0,0)' },
+                        highlight: { background: 'rgba(0,0,0,0)', border: 'rgba(0,0,0,0)' }
+                    },
+                    shadow: { enabled: false }
+                },
+                edges: {
+                    width: 0,
+                    selectionWidth: 0,
+                    hoverWidth: 0,
+                    color: { color: 'rgba(0,0,0,0)', opacity: 0 },
+                    smooth: { type: 'cubicBezier', roundness: 0.5 },
+                    shadow: { enabled: false }
+                },
+                physics: { enabled: false }, 
+                interaction: { 
+                    hover: false,
+                    hoverConnectedEdges: false, 
+                    tooltipDelay: 200, 
+                    selectConnectedEdges: false, 
+                    zoomView: true, 
+                    dragView: true, 
+                    dragNodes: false 
+                }
+            };
+
+            network = new vis.Network(container, { nodes: nodesDataSet, edges: edgesDataSet }, options);
+
+            // رسم یکپارچه تمامی مسیرهای گراف پیش از رسم گره‌ها (حذف قطعی خطوط دوبل یا ثابت موازی زیرین)
+            network.on("beforeDrawing", function(ctx) {
+                var now = performance.now();
+                var pulseWave = (Math.sin(now * 0.0026) + 1) * 0.5;
+
+                edgesData.forEach(function(edge) {
+                    var visEdge = network.body.edges[edge.id];
+                    if (visEdge && visEdge.edgeType && visEdge.edgeType.getPoint) {
+                        var isActive = (activeEdgeId === edge.id);
+                        var isHovered = (!isActive && hoveredEdgeId === edge.id);
+
+                        ctx.save();
+                        ctx.beginPath();
+                        var steps = 36;
+                        for (var step = 0; step <= steps; step++) {
+                            var tVal = step / steps;
+                            var pt = visEdge.edgeType.getPoint(tVal);
+                            var wOff = getEdgeWiggleOffset(edge.id, tVal, now);
+                            var px = pt.x + wOff.dx;
+                            var py = pt.y + wOff.dy;
+                            if (step === 0) ctx.moveTo(px, py);
+                            else ctx.lineTo(px, py);
+                        }
+
+                        if (isActive) {
+                            var pulseCurveColor = mixHexWithWhite(edge.rawColor, pulseWave * 0.85);
+                            ctx.strokeStyle = pulseCurveColor;
+                            ctx.lineWidth = 2.5 + (pulseWave * 3.0);
+                            ctx.shadowColor = '#ffffff';
+                            ctx.shadowBlur = 8 + (pulseWave * 18);
+                        } else if (isHovered) {
+                            ctx.strokeStyle = '#ffffff';
+                            ctx.lineWidth = 3.2;
+                            ctx.shadowColor = edge.rawColor;
+                            ctx.shadowBlur = 12;
+                        } else {
+                            ctx.strokeStyle = edge.rawColor;
+                            ctx.lineWidth = 2.0;
+                            ctx.shadowColor = 'transparent';
+                            ctx.shadowBlur = 0;
+                            ctx.shadowOffsetY = 0;
+                        }
+                        ctx.stroke();
+                        ctx.restore();
+                    }
+                });
+            });
+
+            // رسم گره‌های خورشیدگرفتگی + تورم پیازی مقیاس‌پذیر + افکت سینوسی دعوت به لمس
+            network.on("afterDrawing", function(ctx) {
+                var now = performance.now();
+                var pulseWave = (Math.sin(now * 0.0026) + 1) * 0.5;
+
+                // رسم گره‌ها به شیوه نفوذ و ادغام عمیق رنگی (فید حداکثری در مرکز + حفظ رنگ خالص در دهانه‌ها بدون سفیدی)
+                baseNodes.forEach(function(node) {
+                    var visNode = network && network.body && network.body.nodes && network.body.nodes[node.id];
+                    if (visNode && typeof visNode.x === 'number' && typeof visNode.y === 'number') {
+                        drawDiffuseNode(ctx, node.id, visNode.x, visNode.y);
+                    }
+                });
+
+                // محاسبه ضریب انیمیشن دعوت به تعامل (چه در ورود ۴.۶ ثانیه‌ای و چه در سیکل‌های ۳ ثانیه‌ای بعدی)
+                var introEnvelope = 0;
+                var introElapsed = 0;
+                if (affordanceStartTime !== null && !isMiniatureMode && !activeEdgeId) {
+                    introElapsed = now - affordanceStartTime;
+                    if (introElapsed > 0 && introElapsed < affordanceCurrentDuration) {
+                        var fadeInDur = Math.min(600, affordanceCurrentDuration * 0.25);
+                        var fadeOutDur = Math.min(1200, affordanceCurrentDuration * 0.38);
+                        var fadeIn = Math.min(1, introElapsed / fadeInDur);
+                        var fadeOut = Math.min(1, (affordanceCurrentDuration - introElapsed) / fadeOutDur);
+                        introEnvelope = fadeIn * (fadeOut * fadeOut * (3 - 2 * fadeOut));
+                    }
+                }
+
+                edgesData.forEach(function(edge, idx) {
+                    var visEdge = network.body.edges[edge.id];
+                    if (visEdge && visEdge.edgeType && visEdge.edgeType.getPoint) {
+                        var isActive = (activeEdgeId === edge.id);
+                        var isHovered = (!isActive && hoveredEdgeId === edge.id);
+
+                        var introBreath = 0;
+                        var ripplePhase = 0;
+                        if (introEnvelope > 0.001) {
+                            var phaseOffset = idx * 0.75;
+                            var localWave = (Math.sin((introElapsed * 0.0042) - phaseOffset) + 1) * 0.5;
+                            introBreath = localWave * introEnvelope;
+                            ripplePhase = ((introElapsed * 0.00065) + (idx * 0.16)) % 1;
+                        }
+
+                        if (edgeScales[edge.id] === undefined) edgeScales[edge.id] = 1.0;
+                        var targetScale = (hoveredEdgeId === edge.id)
+                            ? 1.4
+                            : (isActive
+                                ? (1.12 + pulseWave * 0.16)
+                                : (1.0 + introBreath * 0.07)); // تنفس بسیار ملایم غلاف (فقط ۷٪ به جای ۲۲٪)
+
+                        if (!isActive && introEnvelope <= 0.001 && Math.abs(edgeScales[edge.id] - targetScale) > 0.01) {
+                            edgeScales[edge.id] += (targetScale - edgeScales[edge.id]) * 0.15;
+                            requestAnimationFrame(function() { network.redraw(); });
+                        } else {
+                            edgeScales[edge.id] = targetScale;
+                        }
+
+                        var currentScale = edgeScales[edge.id];
+                        var count = edge.chunks.length;
+                        var baseRadX = 20 + (count * 3);
+                        var baseRadY = 9 + (count * 1.5);
+                        var radX = baseRadX * currentScale;
+                        var radY = baseRadY * currentScale;
+                        var tail = (radX + 6) * currentScale;
+                        var cpX1 = radX * 0.5;
+                        var cpX2 = radX * 0.4;
+
+                        // تخمین سرعت محلی منحنی در میانه مسیر برای پیمایش پارامتری طولی
+                        var pA = visEdge.edgeType.getPoint(0.46);
+                        var pB = visEdge.edgeType.getPoint(0.54);
+                        var wA = getEdgeWiggleOffset(edge.id, 0.46, now);
+                        var wB = getEdgeWiggleOffset(edge.id, 0.54, now);
+                        var chordSpeed = Math.hypot((pB.x + wB.dx) - (pA.x + wA.dx), (pB.y + wB.dy) - (pA.y + wA.dy)) / 0.08;
+                        if (chordSpeed < 20) chordSpeed = 220;
+
+                        // تولید هندسه اصیل، کشیده و ارگانیک غلاف (منطبق بر منحنی با دُم‌های کاملاً مماس و هم‌راستا با مسیر)
+                        function generatePodPoints(scaleMult, radYMult) {
+                            var upper = [];
+                            var lower = [];
+                            var steps = 36;
+                            var effTail = tail * scaleMult;
+                            var effRadY = radY * radYMult;
+                            var effCpX1 = cpX1 * scaleMult;
+                            var effCpX2 = cpX2 * scaleMult;
+
+                            for (var step = 0; step <= steps; step++) {
+                                var u = -1.0 + (2.0 * step / steps); // از -1 تا +1
+                                var p = Math.abs(u); // 0 در مرکز، 1 در انتهای دُم‌ها
+
+                                // معادله دقیق بزیه غلاف اصلی: انحنای ملایم و کشیده با شیب مماس افقی در دُم‌ها (بدون فرم خمره‌ای)
+                                var x_dist = (3 * (1 - p) * (1 - p) * p * effCpX2 + 3 * (1 - p) * p * p * effCpX1 + p * p * p * effTail);
+                                var halfW = (1 - p) * (1 - p) * (1 + 2 * p) * effRadY;
+
+                                var sign_u = (u < 0 ? -1 : 1);
+                                var dtOffset = (sign_u * x_dist) / chordSpeed;
+                                var t = 0.5 + dtOffset;
+                                t = Math.max(0.01, Math.min(0.99, t));
+
+                                var pt = visEdge.edgeType.getPoint(t);
+                                var wOff = getEdgeWiggleOffset(edge.id, t, now);
+                                var cx = pt.x + wOff.dx;
+                                var cy = pt.y + wOff.dy;
+
+                                // زاویه مماس و بردار عمود بر منحنی در همین نقطه
+                                var t1 = Math.max(0, t - 0.005);
+                                var t2 = Math.min(1, t + 0.005);
+                                var pt1 = visEdge.edgeType.getPoint(t1);
+                                var pt2 = visEdge.edgeType.getPoint(t2);
+                                var w1 = getEdgeWiggleOffset(edge.id, t1, now);
+                                var w2 = getEdgeWiggleOffset(edge.id, t2, now);
+                                var tx = (pt2.x + w2.dx) - (pt1.x + w1.dx);
+                                var ty = (pt2.y + w2.dy) - (pt1.y + w1.dy);
+                                var tLen = Math.hypot(tx, ty) || 1;
+                                var nx = -ty / tLen;
+                                var ny = tx / tLen;
+
+                                upper.push({ x: cx + nx * halfW, y: cy + ny * halfW });
+                                lower.push({ x: cx - nx * halfW, y: cy - ny * halfW });
+                            }
+                            return { upper: upper, lower: lower };
+                        }
+
+                        // رسم افکت دعوت به لمس پیرامون غلاف (ملایم، نزدیک و منطبق بر پوسته غلاف بدون فاصله و درشتی اضافه)
+                        if (introEnvelope > 0.01) {
+                            var ripplePts = generatePodPoints(1.05 + ripplePhase * 0.16, 1.06 + ripplePhase * 0.18);
+                            var ringAlpha = (1 - ripplePhase) * 0.28 * introEnvelope;
+
+                            ctx.save();
+                            ctx.beginPath();
+                            ctx.moveTo(ripplePts.upper[0].x, ripplePts.upper[0].y);
+                            for (var r1 = 1; r1 < ripplePts.upper.length; r1++) {
+                                ctx.lineTo(ripplePts.upper[r1].x, ripplePts.upper[r1].y);
+                            }
+                            for (var r2 = ripplePts.lower.length - 1; r2 >= 0; r2--) {
+                                ctx.lineTo(ripplePts.lower[r2].x, ripplePts.lower[r2].y);
+                            }
+                            ctx.closePath();
+                            ctx.strokeStyle = hexToRgba(edge.rawColor, ringAlpha);
+                            ctx.lineWidth = 1.0;
+                            ctx.shadowBlur = 0;
+                            ctx.stroke();
+                            ctx.restore();
+                        }
+
+                        // رسم کالبد شفاف و لطیف غلاف میان‌مسیر
+                        var pts = generatePodPoints(1.0, 1.0);
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.moveTo(pts.upper[0].x, pts.upper[0].y);
+                        for (var k = 1; k < pts.upper.length; k++) {
+                            ctx.lineTo(pts.upper[k].x, pts.upper[k].y);
+                        }
+                        for (var m = pts.lower.length - 1; m >= 0; m--) {
+                            ctx.lineTo(pts.lower[m].x, pts.lower[m].y);
+                        }
+                        ctx.closePath();
+
+                        if (isActive) {
+                            ctx.fillStyle = mixHexWithWhite(edge.rawColor, pulseWave * 0.82);
+                            ctx.shadowColor = mixHexWithWhite(edge.rawColor, pulseWave * 0.9);
+                            ctx.shadowBlur = 10 + (pulseWave * 16);
+                        } else if (isHovered) {
+                            ctx.fillStyle = mixHexWithWhite(edge.rawColor, 0.35);
+                            ctx.shadowColor = edge.rawColor;
+                            ctx.shadowBlur = 8;
+                        } else if (introEnvelope > 0.01) {
+                            ctx.fillStyle = mixHexWithWhite(edge.rawColor, introBreath * 0.15);
+                            ctx.shadowColor = 'transparent';
+                            ctx.shadowBlur = 0;
+                            ctx.shadowOffsetY = 0;
+                        } else {
+                            ctx.fillStyle = edge.rawColor;
+                            ctx.shadowColor = 'transparent';
+                            ctx.shadowBlur = 0;
+                            ctx.shadowOffsetY = 0;
+                        }
+                        ctx.fill();
+                        ctx.restore();
+
+                        // رسم مرواریدها / نقاط نورانی زیستی در قلب غلاف (جایگزین کامل اعداد)
+                        if (!isMiniatureMode) {
+                            var pCenterBase = visEdge.edgeType.getPoint(0.5);
+                            var wCenter = getEdgeWiggleOffset(edge.id, 0.5, now);
+                            var cxMid = pCenterBase.x + wCenter.dx;
+                            var cyMid = pCenterBase.y + wCenter.dy;
+
+                            // جهت مماس و عمود در کانون غلاف
+                            var pT1 = visEdge.edgeType.getPoint(0.495);
+                            var pT2 = visEdge.edgeType.getPoint(0.505);
+                            var tAx = pT2.x - pT1.x;
+                            var tAy = pT2.y - pT1.y;
+                            var tAlen = Math.hypot(tAx, tAy) || 1;
+                            var ux = tAx / tAlen;
+                            var uy = tAy / tAlen;
+                            var unx = -uy;
+                            var uny = ux;
+
+                            // ضخامت استروک و مقیاس ابعادی مرواریدها (۸٪ بزرگتر با محاسبه دقیق مماس خط دور بدون هیچ تداخلی)
+                            var strokeW = 0.65;
+                            var pearls = [];
+
+                            if (count === 1) {
+                                var R_vis1 = 4.8 * 1.08 * currentScale;
+                                var rPath1 = Math.max(0.5, R_vis1 - strokeW * 0.5);
+                                pearls.push({ x: cxMid, y: cyMid, rPath: rPath1, R_vis: R_vis1 });
+                            } else if (count === 2) {
+                                // دو مروارید ۸٪ بزرگتر در امتداد محور غلاف، مماس دقیق خطوط دور بدون افتادن استروک‌ها روی هم
+                                var R_vis2 = 4.2 * 1.08 * currentScale;
+                                var rPath2 = Math.max(0.5, R_vis2 - strokeW * 0.5);
+                                pearls.push({ x: cxMid - ux * R_vis2, y: cyMid - uy * R_vis2, rPath: rPath2, R_vis: R_vis2 });
+                                pearls.push({ x: cxMid + ux * R_vis2, y: cyMid + uy * R_vis2, rPath: rPath2, R_vis: R_vis2 });
+                            } else if (count === 3) {
+                                // سه مروارید ۸٪ بزرگتر در خوشه مثلثی متقارن، مماس دو به دو بر استروک یکدیگر با خطای دقیقاً صفر
+                                var R_vis3 = 3.8 * 1.08 * currentScale;
+                                var rPath3 = Math.max(0.5, R_vis3 - strokeW * 0.5);
+                                var rDist3 = (2 * R_vis3) / Math.sqrt(3);
+                                pearls.push({ x: cxMid + ux * rDist3, y: cyMid + uy * rDist3, rPath: rPath3, R_vis: R_vis3 });
+                                pearls.push({
+                                    x: cxMid - ux * (0.5 * rDist3) + unx * (Math.sqrt(3) / 2 * rDist3),
+                                    y: cyMid - uy * (0.5 * rDist3) + uny * (Math.sqrt(3) / 2 * rDist3),
+                                    rPath: rPath3,
+                                    R_vis: R_vis3
+                                });
+                                pearls.push({
+                                    x: cxMid - ux * (0.5 * rDist3) - unx * (Math.sqrt(3) / 2 * rDist3),
+                                    y: cyMid - uy * (0.5 * rDist3) - uny * (Math.sqrt(3) / 2 * rDist3),
+                                    rPath: rPath3,
+                                    R_vis: R_vis3
+                                });
+                            } else {
+                                var R_vis4 = 3.3 * 1.08 * currentScale;
+                                var rPath4 = Math.max(0.5, R_vis4 - strokeW * 0.5);
+                                pearls.push({ x: cxMid + ux * R_vis4, y: cyMid + uy * R_vis4, rPath: rPath4, R_vis: R_vis4 });
+                                pearls.push({ x: cxMid - ux * R_vis4, y: cyMid - uy * R_vis4, rPath: rPath4, R_vis: R_vis4 });
+                                pearls.push({ x: cxMid + unx * R_vis4, y: cyMid + uny * R_vis4, rPath: rPath4, R_vis: R_vis4 });
+                                pearls.push({ x: cxMid - unx * R_vis4, y: cyMid - uny * R_vis4, rPath: rPath4, R_vis: R_vis4 });
+                            }
+
+                            pearls.forEach(function(prl) {
+                                ctx.save();
+                                var pGrad = ctx.createRadialGradient(
+                                    prl.x - prl.R_vis * 0.35, prl.y - prl.R_vis * 0.35, prl.R_vis * 0.08,
+                                    prl.x, prl.y, prl.R_vis
+                                );
+                                pGrad.addColorStop(0.0, '#ffffff');
+                                pGrad.addColorStop(0.40, '#f8fafc');
+                                pGrad.addColorStop(0.80, '#e2e8f0');
+                                pGrad.addColorStop(1.0, hexToRgba(edge.rawColor, 0.45));
+
+                                ctx.beginPath();
+                                ctx.arc(prl.x, prl.y, prl.rPath, 0, 2 * Math.PI);
+                                ctx.fillStyle = pGrad;
+                                if (isActive) {
+                                    ctx.shadowColor = '#ffffff';
+                                    ctx.shadowBlur = 6;
+                                } else {
+                                    ctx.shadowBlur = 0;
+                                }
+                                ctx.fill();
+
+                                ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+                                ctx.lineWidth = strokeW;
+                                ctx.stroke();
+                                ctx.restore();
+                            });
+                        }
+                    }
+                });
+            });
+
+            // تشخیص فوری اولین لمس (Single Tap) + دابل‌تپ روی پس‌زمینه برای تمام‌صفحه شدن (فقط در موبایل)
+            var tapStart = null;
+            var lastBgTapTime = 0;
+            var lastBgTapX = 0;
+            var lastBgTapY = 0;
+
+            function toggleMobileFullscreen() {
+                var doc = document;
+                var docEl = document.documentElement;
+                var isFs = doc.fullscreenElement || doc.webkitFullscreenElement || doc.msFullscreenElement;
+                if (!isFs) {
+                    var req = docEl.requestFullscreen || docEl.webkitRequestFullscreen || docEl.msRequestFullscreen;
+                    if (req) {
+                        try {
+                            var p = req.call(docEl);
+                            if (p && typeof p.catch === 'function') p.catch(function() {});
+                        } catch (err) {}
+                    }
+                } else {
+                    var exit = doc.exitFullscreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
+                    if (exit) {
+                        try {
+                            var p2 = exit.call(doc);
+                            if (p2 && typeof p2.catch === 'function') p2.catch(function() {});
+                        } catch (err) {}
+                    }
+                }
+            }
+
+            var lastHandledNodePressId = null;
+            var lastHandledNodePressTime = 0;
+
+            // پاسخ آنی و صفر میلی‌ثانیه به فشردن کلیک/تپ روی گره (بدون انتظار برای برداشتن کلیک)
+            container.addEventListener('pointerdown', function(e) {
+                if (document.getElementById('edge-modal').classList.contains('show')) return;
+                if (e.isPrimary !== false) {
+                    tapStart = { x: e.clientX, y: e.clientY };
+                }
+                var rect = container.getBoundingClientRect();
+                var domX = e.clientX - rect.left;
+                var domY = e.clientY - rect.top;
+                var hitNodeDeadZone = getNodeInDeadZone(domX, domY);
+                if (hitNodeDeadZone !== null) {
+                    lastHandledNodePressId = hitNodeDeadZone;
+                    lastHandledNodePressTime = Date.now();
+                    lastBgTapTime = 0;
+                    // شلیک آنی در لحظه فشردن کلیک: سر خوردن گره روی رئوس مثلث + انتشار موج
+                    triggerNodeTouchResponse(hitNodeDeadZone);
+                }
+            }, { capture: true, passive: true });
+
+            container.addEventListener('pointerup', function(e) {
+                if (!tapStart) return;
+                var dx = e.clientX - tapStart.x;
+                var dy = e.clientY - tapStart.y;
+                var dist = Math.hypot(dx, dy);
+                tapStart = null;
+
+                var rect = container.getBoundingClientRect();
+                var domX = e.clientX - rect.left;
+                var domY = e.clientY - rect.top;
+
+                // در مرحله برداشتن کلیک روی گره مطلقاً هیچ واکنشی نشان داده نمی‌شود
+                if (lastHandledNodePressId !== null && (Date.now() - lastHandledNodePressTime < 650)) {
+                    lastHandledNodePressId = null;
+                    return;
+                }
+                var hitNodeDeadZone = getNodeInDeadZone(domX, domY);
+                if (hitNodeDeadZone !== null) {
+                    return;
+                }
+
+                if (dist < 18) {
+                    var hitEdgeId = findEdgeNearScreenPoint(domX, domY);
+                    if (hitEdgeId) {
+                        lastBgTapTime = 0;
+                        triggerOpenModal(edgesDataSet.get(hitEdgeId));
+                    } else if (window.innerWidth <= 768 && !isMiniatureMode && !document.getElementById('edge-modal').classList.contains('show')) {
+                        var hitNodeId = network ? network.getNodeAt({ x: domX, y: domY }) : undefined;
+                        if (hitNodeId === undefined) {
+                            var nowTap = Date.now();
+                            if (nowTap - lastBgTapTime < 340 && Math.hypot(e.clientX - lastBgTapX, e.clientY - lastBgTapY) < 42) {
+                                lastBgTapTime = 0;
+                                toggleMobileFullscreen();
+                            } else {
+                                lastBgTapTime = nowTap;
+                                lastBgTapX = e.clientX;
+                                lastBgTapY = e.clientY;
+                            }
+                        } else {
+                            lastBgTapTime = 0;
+                        }
+                    }
+                }
+            }, { capture: true, passive: true });
+
+            network.on("click", function(params) {
+                if (params.pointer && params.pointer.DOM) {
+                    var clickedNodeDeadZone = getNodeInDeadZone(params.pointer.DOM.x, params.pointer.DOM.y);
+                    if (clickedNodeDeadZone !== null) {
+                        network.unselectAll();
+                        // در مرحله رهاسازی/کلیک نهایی گره هیچ واکنشی نشان نمی‌دهیم
+                        return;
+                    }
+                    var hitEdgeId = findEdgeNearScreenPoint(params.pointer.DOM.x, params.pointer.DOM.y);
+                    if (hitEdgeId) {
+                        triggerOpenModal(edgesDataSet.get(hitEdgeId));
+                        return;
+                    }
+                }
+            });
+
+            if (!isTouchDevice) {
+                container.addEventListener('pointermove', function(e) {
+                    if (document.getElementById('edge-modal').classList.contains('show')) {
+                        if (hoveredEdgeId !== null) {
+                            hoveredEdgeId = null;
+                            container.style.cursor = 'default';
+                            if (network) network.redraw();
+                        }
+                        return;
+                    }
+                    var rect = container.getBoundingClientRect();
+                    var domX = e.clientX - rect.left;
+                    var domY = e.clientY - rect.top;
+                    var nextHover = findEdgeNearScreenPoint(domX, domY);
+                    if (nextHover !== hoveredEdgeId) {
+                        hoveredEdgeId = nextHover;
+                        container.style.cursor = nextHover ? 'pointer' : 'default';
+                        if (network) network.redraw();
+                    }
+                }, { passive: true });
+
+                container.addEventListener('pointerleave', function() {
+                    if (hoveredEdgeId !== null) {
+                        hoveredEdgeId = null;
+                        container.style.cursor = 'default';
+                        if (network) network.redraw();
+                    }
+                }, { passive: true });
+            }
+            
+            network.once("afterDrawing", function() {
+                fitGraph(900, function() {
+                    graphBaseBBox = measureGraphBaseBBox();
+                    // در بدو ورود: اجرای موج اولیه به مدت ۴.۶ ثانیه، سپس ورود خودکار به سیکل ۶ ثانیه سکون / ۳ ثانیه افکت
+                    runAffordanceWave(4600);
+                });
+            });
+        }
+
+        // تنظیم زوم استاندارد گراف در نمای پیش‌فرض (پایدار و بدون هیچ تکان در بدو ورود)
+        function fitGraph(duration = 600, onComplete) {
+            if (!network) return;
+            var portrait = isPortraitMode();
+            var pad = portrait ? 72 : 100;
+            network.fit({
+                padding: pad,
+                animation: duration > 0 ? { duration: duration, easingFunction: 'easeInOutQuad' } : false
+            });
+            if (onComplete) {
+                setTimeout(onComplete, duration + 40);
+            }
+        }
+
+        // فعال‌سازی حالت زوم‌اوت مینیاتوری در بالای پنجره + بازگردانی یکپارچه ویوپورت در صورت زوم/پن قبلی کاربر
+        function setMobileZoomOutState(active) {
+            if (window.innerWidth > 768 && active) return;
+            isMiniatureMode = active;
+
+            if (active) {
+                stopAffordanceCycle();
+                if (network) {
+                    var portrait = isPortraitMode();
+                    // ۱. اندازه‌گیری موقعیت فعلی گراف روی صفحه (در صورتی که کاربر قبلاً زوم‌این یا پن کرده باشد)
+                    var currentBBox = measureGraphBaseBBox();
+                    // ۲. بازگرداندن آنی دوربین داخلی Vis.js به کادر استاندارد مرکزی
+                    network.fit({
+                        padding: portrait ? 68 : 100,
+                        animation: false
+                    });
+                    // ۳. اندازه‌گیری کادر استاندارد مرکزی
+                    graphBaseBBox = measureGraphBaseBBox();
+
+                    // ۴. اگر کاربر ویوپورت گراف را جابجا یا زوم کرده بود، جبران اختلاف در نقطه شروع CSS تا گراف از دقیقاً همان جایی که کاربر می‌بیند، در طول انیمیشن نرم به جایگاه استاندارد بالای پنجره پرواز کند
+                    if (currentBBox && graphBaseBBox && graphBaseBBox.width > 0) {
+                        var startScale = currentBBox.width / graphBaseBBox.width;
+                        var vcx = window.innerWidth * 0.5;
+                        var vcy = window.innerHeight * 0.5;
+                        var startTx = currentBBox.centerX - vcx - (graphBaseBBox.centerX - vcx) * startScale;
+                        var startTy = currentBBox.centerY - vcy - (graphBaseBBox.centerY - vcy) * startScale;
+
+                        if (Math.abs(startScale - 1) > 0.015 || Math.abs(startTx) > 2 || Math.abs(startTy) > 2) {
+                            document.body.classList.add('graph-live-sync');
+                            document.documentElement.style.setProperty('--graph-tx', startTx.toFixed(2) + 'px');
+                            document.documentElement.style.setProperty('--graph-ty', startTy.toFixed(2) + 'px');
+                            document.documentElement.style.setProperty('--graph-scale', startScale.toFixed(4));
+                            // ثبت نقطه شروع در مرورگر (Force Reflow) پیش از شروع انیمیشن نرم به سمت وضعیت نهایی
+                            void document.getElementById('mynetwork').offsetWidth;
+                        }
+                    }
+
+                    network.setOptions({
+                        nodes: { font: { color: 'rgba(226, 232, 240, 0)' } }
+                    });
+                }
+
+                document.body.classList.remove('graph-live-sync');
+                document.body.classList.add('mobile-modal-open');
+                // اعمال مقصد نهایی در بالای پنجره مفاهیم
+                syncGraphToAvailableSpace(0);
+            } else {
+                if (liveSyncRafId) {
+                    cancelAnimationFrame(liveSyncRafId);
+                    liveSyncRafId = null;
+                }
+                document.body.classList.remove('graph-live-sync');
+                document.body.classList.remove('mobile-modal-open');
+                document.documentElement.style.setProperty('--graph-tx', '0px');
+                document.documentElement.style.setProperty('--graph-ty', '0px');
+                document.documentElement.style.setProperty('--graph-scale', '1');
+                if (network) {
+                    network.setOptions({
+                        nodes: { font: { color: '#e2e8f0' } }
+                    });
+                }
+                // پس از بسته شدن پنجره و بازگشت گراف به حالت بزرگ و استاندارد مرکزی: ۶ ثانیه سکون و سپس شروع سیکل‌های ۳ ثانیه‌ای
+                scheduleNextAffordanceWave(6000, 3000);
+            }
+        }
+
+        // رصد زنده (ResizeObserver) تغییرات ارتفاع پنجره
+        if (typeof ResizeObserver !== 'undefined') {
+            var modalResizeObserver = new ResizeObserver(function() {
+                if (isMiniatureMode && window.innerWidth <= 768) {
+                    syncGraphToAvailableSpace(0);
+                }
+            });
+            window.addEventListener('DOMContentLoaded', function() {
+                var modalBoxEl = document.getElementById('modal-content-box');
+                if (modalBoxEl) modalResizeObserver.observe(modalBoxEl);
+            });
+            var existingModalBox = document.getElementById('modal-content-box');
+            if (existingModalBox) modalResizeObserver.observe(existingModalBox);
+        }
+
+        var lastPortrait = isPortraitMode();
+        var resizeTimeout = null;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(function() {
+                var currentPortrait = isPortraitMode();
+                if (currentPortrait !== lastPortrait) {
+                    lastPortrait = currentPortrait;
+                    nodeVertexIndices = {};
+                    nodeDodgeStates = {};
+                    nodesDataSet.update(getNodesForViewport());
+                    applyEdgeSmoothingForViewport();
+                }
+                if (!isMiniatureMode) {
+                    fitGraph(500, function() {
+                        graphBaseBBox = measureGraphBaseBBox();
+                    });
+                } else {
+                    syncGraphToAvailableSpace(0);
+                }
+            }, 150);
+        });
+
+        function openModal(edgeData) {
+            stopAffordanceCycle();
+
+            let fromNode = nodesDataSet.get(edgeData.from);
+            let toNode = nodesDataSet.get(edgeData.to);
+            let edgeColor = edgeData.rawColor || edgeData.color.color || edgeData.color;
+
+            let fromLabel = (fromNode.fullLabel || fromNode.label).replace('\n', ' ');
+            let toLabel = (toNode.fullLabel || toNode.label).replace('\n', ' ');
+
+            document.documentElement.style.setProperty('--edge-color', edgeColor);
+
+            // بروزرسانی گره‌های کناری دسکتاپ
+            document.getElementById('modal-node-from').innerText = fromLabel;
+            document.getElementById('modal-node-to').innerText = toLabel;
+
+            // بروزرسانی نمایش گرافیکی افقی ضلع در بالای پنجره موبایل (بدون دایره‌های رنگی و بدون عدد)
+            document.getElementById('mobile-node-from').innerText = fromLabel;
+            document.getElementById('mobile-node-to').innerText = toLabel;
+            document.getElementById('mobile-edge-line').style.backgroundColor = edgeColor;
+            document.getElementById('mobile-edge-line').style.boxShadow = `0 0 10px ${edgeColor}`;
+            document.getElementById('mobile-spindle-path').setAttribute('fill', edgeColor);
+
+            document.getElementById('modal-content-box').style.border = `1.5px solid ${edgeColor}`;
+            document.getElementById('modal-content-box').style.boxShadow = `0 30px 60px rgba(0,0,0,0.6), 0 0 30px ${edgeColor}35`;
+            
+            document.getElementById('line-from').style.backgroundColor = edgeColor;
+            document.getElementById('line-from').style.boxShadow = `0 0 10px ${edgeColor}`;
+            document.getElementById('line-to').style.backgroundColor = edgeColor;
+            document.getElementById('line-to').style.boxShadow = `0 0 10px ${edgeColor}`;
+            
+            var container = document.getElementById('accordion-container');
+            container.innerHTML = '';
+            
+            edgeData.chunks.forEach((chunk) => {
+                var item = document.createElement('div');
+                item.className = 'accordion-item';
+                
+                var header = document.createElement('div');
+                header.className = 'accordion-header';
+                header.innerHTML = `<span>${chunk.title}</span>`;
+                
+                var bodyWrapper = document.createElement('div');
+                bodyWrapper.className = 'accordion-body-wrapper';
+
+                var body = document.createElement('div');
+                body.className = 'accordion-body';
+                body.innerHTML = `<br>${chunk.text}`;
+                
+                bodyWrapper.appendChild(body);
+
+                item.onclick = function() {
+                    item.classList.toggle('active');
+                    // همگام‌سازی لحظه‌ای و فریم‌به‌فریم گراف با باز و بسته شدن آکاردئون بدون هیچ‌گونه تاخیر
+                    triggerLiveGraphSync(360);
+                };
+                
+                item.appendChild(header);
+                item.appendChild(bodyWrapper);
+                container.appendChild(item);
+            });
+            
+            var modalLayout = document.getElementById('modal-layout');
+            modalLayout.style.transition = '';
+            modalLayout.style.transform = '';
+
+            document.getElementById('edge-modal').classList.add('show');
+
+            // شروع پالسینگ آرام مسیر انتخاب‌شده
+            activeEdgeId = edgeData.id;
+            startPulseLoop();
+
+            // زوم‌اوت همزمان گراف در بالای پنجره (در حالت موبایل)
+            if (window.innerWidth <= 768) {
+                setMobileZoomOutState(true);
+            }
+        }
+
+        function closeModal(e) {
+            if (!e) {
+                var modalLayout = document.getElementById('modal-layout');
+                modalLayout.style.transition = '';
+                modalLayout.style.transform = '';
+                document.getElementById('edge-modal').classList.remove('show');
+                setMobileZoomOutState(false);
+                stopPulseLoop();
+                return;
+            }
+            if (Date.now() - lastModalOpenTime < 400) {
+                return;
+            }
+            if (
+                e.target.id === 'edge-modal' ||
+                e.target.classList.contains('modal-layout') ||
+                e.target.classList.contains('connecting-line')
+            ) {
+                var modalLayout = document.getElementById('modal-layout');
+                modalLayout.style.transition = '';
+                modalLayout.style.transform = '';
+                document.getElementById('edge-modal').classList.remove('show');
+                setMobileZoomOutState(false);
+                stopPulseLoop();
+            }
+        }
+
+        window.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && document.getElementById('edge-modal').classList.contains('show')) {
+                closeModal();
+            }
+        });
+
+        // قابلیت کشیدن پنجره با انگشت (به پایین و بالا) به همراه واکنش آنی و بدون تاخیر گراف بالا
+        (function initSwipeToClose() {
+            var modalBox = document.getElementById('modal-content-box');
+            var modalLayout = document.getElementById('modal-layout');
+            var handleArea = document.getElementById('sheet-handle-area');
+
+            var startY = 0;
+            var currentDeltaY = 0;
+            var isDraggingSheet = false;
+            var canDragFromScrollTop = false;
+
+            modalBox.addEventListener('touchstart', function(e) {
+                if (window.innerWidth > 768) return;
+                if (!document.getElementById('edge-modal').classList.contains('show')) return;
+                if (e.touches.length !== 1) return;
+
+                startY = e.touches[0].clientY;
+                currentDeltaY = 0;
+                isDraggingSheet = false;
+
+                var touchedHandle = handleArea && handleArea.contains(e.target);
+                canDragFromScrollTop = touchedHandle || (modalBox.scrollTop <= 2);
+            }, { passive: true });
+
+            modalBox.addEventListener('touchmove', function(e) {
+                if (!canDragFromScrollTop || window.innerWidth > 768) return;
+                var y = e.touches[0].clientY;
+                var dy = y - startY;
+
+                if (dy > 4) {
+                    if (modalBox.scrollTop <= 2) {
+                        isDraggingSheet = true;
+                        currentDeltaY = dy;
+                        document.body.classList.add('graph-live-sync');
+                        modalLayout.style.transition = 'none';
+                        modalLayout.style.transform = `translate3d(0, ${dy}px, 0)`;
+                        syncGraphToAvailableSpace(dy);
+                        if (e.cancelable) e.preventDefault();
+                    }
+                } else if (isDraggingSheet) {
+                    var elasticUp = dy * 0.25;
+                    currentDeltaY = elasticUp;
+                    document.body.classList.add('graph-live-sync');
+                    modalLayout.style.transition = 'none';
+                    modalLayout.style.transform = `translate3d(0, ${elasticUp}px, 0)`;
+                    syncGraphToAvailableSpace(elasticUp);
+                    if (e.cancelable) e.preventDefault();
+                }
+            }, { passive: false });
+
+            function finishTouch() {
+                if (!isDraggingSheet) return;
+                isDraggingSheet = false;
+                document.body.classList.remove('graph-live-sync');
+                modalLayout.style.transition = 'transform 0.42s cubic-bezier(0.22, 1, 0.36, 1)';
+
+                if (currentDeltaY > 75) {
+                    closeModal();
+                } else {
+                    modalLayout.style.transform = 'translate3d(0, 0, 0)';
+                    syncGraphToAvailableSpace(0);
+                    setTimeout(function() {
+                        if (document.getElementById('edge-modal').classList.contains('show')) {
+                            modalLayout.style.transition = '';
+                            modalLayout.style.transform = '';
+                        }
+                    }, 430);
+                }
+                currentDeltaY = 0;
+            }
+
+            modalBox.addEventListener('touchend', finishTouch, { passive: true });
+            modalBox.addEventListener('touchcancel', finishTouch, { passive: true });
+        })();
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initGraph);
+        } else {
+            initGraph();
+        }
+    </script>
+</body>
+</html>

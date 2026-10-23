@@ -1,0 +1,16 @@
+# Office & System temporary files
+~$*
+*.tmp
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# IDEs & Tools
+.vscode/
+.idea/
+.gemini/
+*.log
+
+# Build & Scratch
+scratch/
+New folder/
