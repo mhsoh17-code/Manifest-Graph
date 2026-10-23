@@ -1113,7 +1113,19 @@
             return 1 - Math.pow(1 - x, 3);
         }
 
-        // واکنش رعدآسای نوری روی مرواریدهای میان‌مسیرهای متصل به محض کلیک
+        var heldPearlEdgeIds = {};
+        var heldNodeId = null;
+
+        function releaseHeldPearls() {
+            var hadHeld = (heldNodeId !== null || Object.keys(heldPearlEdgeIds).length > 0);
+            if (hadHeld) {
+                heldNodeId = null;
+                heldPearlEdgeIds = {};
+                if (network) network.redraw();
+            }
+        }
+
+        // واکنش رعدآسای نوری روی مرواریدهای میان‌مسیرهای متصل (برای کلیک راست یا چشمک‌های موقت)
         function triggerPearlLightningFlash(nodeId) {
             var connectedEdges = edgesData.filter(function(e) {
                 return e.from === nodeId || e.to === nodeId;
@@ -1127,12 +1139,30 @@
             });
         }
 
-        // واکنش کامل و آنی به لمس یا فشردن گره (سر خوردن گره + ارتعاش طناب + درخشش رعدآسای مرواریدها)
-        function triggerNodeTouchResponse(nodeId) {
+        // واکنش کامل و آنی به لمس یا فشردن گره (سر خوردن گره + ارتعاش طناب + هدایت الکتریکی مرواریدها)
+        function triggerNodeTouchResponse(nodeId, isRightClick) {
             if (!nodeId) return;
             triggerNodeDodge(nodeId);
             triggerNodeNeighborsWiggle(nodeId);
-            triggerPearlLightningFlash(nodeId);
+
+            if (isRightClick) {
+                // در کلیک راست: چشمک زدن سریع مرواریدهای همسایه با سرعت کنونی (۲۲۱ میلی‌ثانیه) و خاموش شدن خودکار
+                releaseHeldPearls();
+                triggerPearlLightningFlash(nodeId);
+            } else {
+                // در کلیک چپ و تپ لمسی موبایل: برقراری مدار الکتریکی و روشن ماندن مرواریدها تا زمان اتصال دست یا کلیک
+                heldNodeId = nodeId;
+                heldPearlEdgeIds = {};
+                var connectedEdges = edgesData.filter(function(e) {
+                    return e.from === nodeId || e.to === nodeId;
+                });
+                connectedEdges.forEach(function(e) {
+                    heldPearlEdgeIds[e.id] = true;
+                    delete pearlFlashStates[e.id];
+                });
+                if (network) network.redraw();
+            }
+
             if (!wiggleAnimFrame) {
                 startWiggleLoop();
             }
@@ -1319,23 +1349,33 @@
             return bestEdgeId;
         }
 
-        // توابع تعیین وزن و اولویت رنگ‌های شاخص (بنفش هندسه معرفتی و آبی هسته مانیفست)
-        function isDominantColor(hex) {
+        // توابع تعیین وزن و اولویت رنگ‌های شاخص
+        function isDominantColor(hex, nodeId) {
             if (!hex) return false;
             var h = hex.toLowerCase();
+            if (nodeId === 3) {
+                // در گره رابط کاربری، رنگ نارنجی غالب و پیشرو است
+                return h === '#fb923c';
+            }
             return h === '#c084fc' || h === '#60a5fa';
         }
 
         function getDominanceWeight(hex, nodeId) {
             if (!hex) return 1.0;
             var h = hex.toLowerCase();
-            // بنفش هندسه معرفتی: در گره ۲ (هندسه معرفتی) و گره ۳ سهم مسلط و سنگین دارد
-            if (h === '#c084fc') {
-                return (nodeId === 2) ? 4.2 : 3.2;
+            // در گره ۳ (رابط کاربری): رنگ نارنجی سهم قاطع و غالب دارد (بیشترش نارنجی باشد تا بنفش)
+            if (nodeId === 3) {
+                if (h === '#fb923c') return 6.5; // سهم قاطع و مسلط نارنجی
+                if (h === '#c084fc') return 0.8; // بنفش محدود و جزئی
+                return 1.0;
             }
-            // آبی هسته مانیفست: در گره ۱ (هسته مانیفست) و گره ۲ سهم مسلط و سنگین دارد
+            // بنفش هندسه معرفتی: در گره ۲ (هندسه معرفتی) سهم مسلط دارد
+            if (h === '#c084fc') {
+                return (nodeId === 2) ? 4.2 : 2.0;
+            }
+            // آبی هسته مانیفست: در گره ۱ (هسته مانیفست) سهم مسلط دارد
             if (h === '#60a5fa') {
-                return (nodeId === 1) ? 4.2 : 3.0;
+                return (nodeId === 1) ? 4.2 : 2.0;
             }
             return 1.0;
         }
@@ -1373,7 +1413,7 @@
                 ctx.save();
                 ctx.beginPath();
                 ctx.arc(nx, ny, R, 0, 2 * Math.PI);
-                ctx.fillStyle = (nodeId === 1) ? '#60a5fa' : ((nodeId === 2) ? '#c084fc' : '#60a5fa');
+                ctx.fillStyle = (nodeId === 1) ? '#60a5fa' : ((nodeId === 2) ? '#c084fc' : ((nodeId === 3) ? '#fb923c' : '#60a5fa'));
                 ctx.fill();
                 ctx.restore();
                 return;
@@ -1428,7 +1468,7 @@
                 var a = item.angle;
                 var px = nx + R * Math.cos(a);
                 var py = ny + R * Math.sin(a);
-                var isDom = isDominantColor(item.rawColor);
+                var isDom = isDominantColor(item.rawColor, nodeId);
 
                 if (isDom) {
                     // رنگ‌های غالب (بنفش معرفتی و آبی مانیفست):
@@ -1454,7 +1494,7 @@
                 }
             }
 
-            // ۴. تثبیت هویت کانون گره‌های مانیفست و هندسه معرفتی در مرکز دایره
+            // ۴. تثبیت هویت کانون گره‌های مانیفست، هندسه معرفتی و رابط کاربری در مرکز دایره
             if (nodeId === 1) {
                 var bloomBlue = ctx.createRadialGradient(nx, ny, 0, nx, ny, R * 0.95);
                 bloomBlue.addColorStop(0.0, hexToRgba('#60a5fa', 0.85));
@@ -1468,6 +1508,13 @@
                 bloomPurple.addColorStop(0.50, hexToRgba('#c084fc', 0.50));
                 bloomPurple.addColorStop(1.0, hexToRgba('#c084fc', 0.0));
                 ctx.fillStyle = bloomPurple;
+                ctx.fillRect(nx - R, ny - R, R * 2, R * 2);
+            } else if (nodeId === 3) {
+                var bloomOrange = ctx.createRadialGradient(nx, ny, 0, nx, ny, R * 0.95);
+                bloomOrange.addColorStop(0.0, hexToRgba('#fb923c', 0.95));
+                bloomOrange.addColorStop(0.55, hexToRgba('#fb923c', 0.65));
+                bloomOrange.addColorStop(1.0, hexToRgba('#fb923c', 0.0));
+                ctx.fillStyle = bloomOrange;
                 ctx.fillRect(nx - R, ny - R, R * 2, R * 2);
             }
 
@@ -1805,10 +1852,14 @@
                                 pearls.push({ x: cxMid - unx * R_vis4, y: cyMid - uny * R_vis4, rPath: rPath4, R_vis: R_vis4 });
                             }
 
-                            // محاسبه وضعیت درخشش رعدآسا برای مرواریدهای این مسیر
+                            // محاسبه وضعیت درخشش مرواریدهای این مسیر (روشن ماندن با اتصال مدار الکتریکی لمس/کلیک یا چشمک کلیک راست)
+                            var isHeld = !!heldPearlEdgeIds[edge.id];
                             var flashState = pearlFlashStates[edge.id];
                             var flashIntensity = 0;
-                            if (flashState) {
+                            if (isHeld) {
+                                // تا زمانی که کلیک یا لمس گره برقرار است، جریان الکتریسیته با نهایت شدت روشن می‌ماند
+                                flashIntensity = 1.0;
+                            } else if (flashState) {
                                 var elapsedF = now - flashState.startTime;
                                 if (elapsedF < flashState.duration) {
                                     var pfProgress = elapsedF / flashState.duration;
@@ -1897,10 +1948,13 @@
 
             var lastHandledNodePressId = null;
             var lastHandledNodePressTime = 0;
+            var isRightDragging = false;
+            var rightDragLast = null;
 
             // پاسخ آنی و صفر میلی‌ثانیه به فشردن کلیک/تپ روی گره (بدون انتظار برای برداشتن کلیک)
             container.addEventListener('pointerdown', function(e) {
                 if (document.getElementById('edge-modal').classList.contains('show')) return;
+                var isRight = (e.button === 2);
                 if (e.isPrimary !== false) {
                     tapStart = { x: e.clientX, y: e.clientY };
                 }
@@ -1912,12 +1966,23 @@
                     lastHandledNodePressId = hitNodeDeadZone;
                     lastHandledNodePressTime = Date.now();
                     lastBgTapTime = 0;
-                    // شلیک آنی در لحظه فشردن کلیک: سر خوردن گره روی رئوس مثلث + انتشار موج
-                    triggerNodeTouchResponse(hitNodeDeadZone);
+                    // شلیک آنی در لحظه فشردن کلیک: سر خوردن گره روی رئوس ستاره + انتشار موج
+                    // در کلیک چپ و تپ موبایل: جریان مدار الکتریکی وصل شده و مرواریدها پیوسته روشن می‌مانند
+                    // در کلیک راست: چشمک رعدآسا با سرعت ۲۲۱ میلی‌ثانیه فعلی و خاموش شدن خودکار
+                    triggerNodeTouchResponse(hitNodeDeadZone, isRight);
+                } else if (isRight) {
+                    // درگ و جابجایی صفحه با کلیک راست (کاملاً مشابه کلیک چپ)
+                    isRightDragging = true;
+                    rightDragLast = { x: e.clientX, y: e.clientY };
                 }
             }, { capture: true, passive: true });
 
             container.addEventListener('pointerup', function(e) {
+                isRightDragging = false;
+                rightDragLast = null;
+                // قطع آنی و بدون وقفه جریان الکتریسیته مرواریدها به محض رها شدن کلیک یا انگشت
+                releaseHeldPearls();
+
                 if (!tapStart) return;
                 var dx = e.clientX - tapStart.x;
                 var dy = e.clientY - tapStart.y;
@@ -1928,8 +1993,8 @@
                 var domX = e.clientX - rect.left;
                 var domY = e.clientY - rect.top;
 
-                // در مرحله برداشتن کلیک روی گره مطلقاً هیچ واکنشی نشان داده نمی‌شود
-                if (lastHandledNodePressId !== null && (Date.now() - lastHandledNodePressTime < 650)) {
+                // در مرحله برداشتن کلیک روی گره مطلقاً هیچ واکنش ثانویه‌ای نشان داده نمی‌شود
+                if (lastHandledNodePressId !== null) {
                     lastHandledNodePressId = null;
                     return;
                 }
@@ -1961,6 +2026,43 @@
                     }
                 }
             }, { capture: true, passive: true });
+
+            window.addEventListener('pointermove', function(e) {
+                if (isRightDragging && rightDragLast && network) {
+                    var dx = e.clientX - rightDragLast.x;
+                    var dy = e.clientY - rightDragLast.y;
+                    rightDragLast = { x: e.clientX, y: e.clientY };
+                    var currentPos = network.getViewPosition();
+                    var scale = network.getScale();
+                    network.moveTo({
+                        position: {
+                            x: currentPos.x - (dx / scale),
+                            y: currentPos.y - (dy / scale)
+                        }
+                    });
+                }
+            }, { passive: true });
+
+            function handleGlobalPointerRelease() {
+                isRightDragging = false;
+                rightDragLast = null;
+                releaseHeldPearls();
+            }
+            window.addEventListener('pointerup', handleGlobalPointerRelease, { passive: true });
+            window.addEventListener('pointercancel', handleGlobalPointerRelease, { passive: true });
+            window.addEventListener('blur', handleGlobalPointerRelease, { passive: true });
+            container.addEventListener('pointerleave', handleGlobalPointerRelease, { passive: true });
+
+            // مهار مطلق منوی زمینه راست‌کلیک مرورگر در تمام صفحه؛ کلیک راست رفتاری کاملاً هم‌ارز کلیک چپ دارد
+            window.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+            }, { capture: true });
+
+            network.on("oncontext", function(params) {
+                if (params && params.event && params.event.preventDefault) {
+                    params.event.preventDefault();
+                }
+            });
 
             network.on("click", function(params) {
                 if (params.pointer && params.pointer.DOM) {
