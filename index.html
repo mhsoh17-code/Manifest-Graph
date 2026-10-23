@@ -91,6 +91,7 @@
             position: relative;
             z-index: 10;
             outline: none;
+            touch-action: none;
             transform-origin: 50% 50%;
             transform: translate3d(var(--graph-tx), var(--graph-ty), 0) scale(var(--graph-scale));
             /* زمان‌بندی و منحنی کاملاً هماهنگ با حرکت پنجره مفاهیم (0.42s) برای شروع و پایان همزمان */
@@ -1116,6 +1117,15 @@
         var heldPearlEdgeIds = {};
         var heldNodeId = null;
 
+        // کنترل پویا و آنی قابلیت Pan و حرکت دادن گراف
+        function setNetworkPanEnabled(enabled) {
+            if (!network) return;
+            if (network.interactionHandler && network.interactionHandler.options) {
+                network.interactionHandler.options.dragView = enabled;
+            }
+            network.setOptions({ interaction: { dragView: enabled } });
+        }
+
         function releaseHeldPearls() {
             var hadHeld = (heldNodeId !== null || Object.keys(heldPearlEdgeIds).length > 0);
             if (hadHeld) {
@@ -1123,6 +1133,8 @@
                 heldPearlEdgeIds = {};
                 if (network) network.redraw();
             }
+            // بازگردانی آنی امکان جابجایی (Pan) گراف پس از رها شدن کلیک یا لمس
+            setNetworkPanEnabled(true);
         }
 
         // واکنش رعدآسای نوری روی مرواریدهای میان‌مسیرهای متصل (برای کلیک راست یا چشمک‌های موقت)
@@ -1966,6 +1978,8 @@
                     lastHandledNodePressId = hitNodeDeadZone;
                     lastHandledNodePressTime = Date.now();
                     lastBgTapTime = 0;
+                    // غیرفعال‌سازی قطعی امکان Pan و جابجایی گراف هنگام فشردن و نگه‌داشتن کلیک یا تپ روی گره
+                    setNetworkPanEnabled(false);
                     // شلیک آنی در لحظه فشردن کلیک: سر خوردن گره روی رئوس ستاره + انتشار موج
                     // در کلیک چپ و تپ موبایل: جریان مدار الکتریکی وصل شده و مرواریدها پیوسته روشن می‌مانند
                     // در کلیک راست: چشمک رعدآسا با سرعت ۲۲۱ میلی‌ثانیه فعلی و خاموش شدن خودکار
