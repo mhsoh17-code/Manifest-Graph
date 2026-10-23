@@ -593,7 +593,7 @@
             { id: 4, label: 'آسیب‌شناسی', hex: '#f87171',
               desktop: { x: -255, y: 110, vadjust: 4 },
               mobile:  { x: 77,   y: 150, vadjust: -2 } },
-            { id: 3, label: 'رابط کاربری', hex: '#fb923c',
+            { id: 3, label: 'فرایند طراحی', hex: '#fb923c',
               desktop: { x: -425, y: -1,  vadjust: -38 },
               mobile:  { x: -102, y: 204, vadjust: -2 } }
         ];
@@ -1354,7 +1354,7 @@
             if (!hex) return false;
             var h = hex.toLowerCase();
             if (nodeId === 3) {
-                // در گره رابط کاربری، رنگ نارنجی غالب و پیشرو است
+                // در گره فرایند طراحی، رنگ نارنجی غالب و پیشرو است
                 return h === '#fb923c';
             }
             return h === '#c084fc' || h === '#60a5fa';
@@ -1363,7 +1363,7 @@
         function getDominanceWeight(hex, nodeId) {
             if (!hex) return 1.0;
             var h = hex.toLowerCase();
-            // در گره ۳ (رابط کاربری): رنگ نارنجی سهم قاطع و غالب دارد (بیشترش نارنجی باشد تا بنفش)
+            // در گره ۳ (فرایند طراحی): رنگ نارنجی سهم قاطع و غالب دارد (بیشترش نارنجی باشد تا بنفش)
             if (nodeId === 3) {
                 if (h === '#fb923c') return 6.5; // سهم قاطع و مسلط نارنجی
                 if (h === '#c084fc') return 0.8; // بنفش محدود و جزئی
@@ -1494,7 +1494,7 @@
                 }
             }
 
-            // ۴. تثبیت هویت کانون گره‌های مانیفست، هندسه معرفتی و رابط کاربری در مرکز دایره
+            // ۴. تثبیت هویت کانون گره‌های مانیفست، هندسه معرفتی و فرایند طراحی در مرکز دایره
             if (nodeId === 1) {
                 var bloomBlue = ctx.createRadialGradient(nx, ny, 0, nx, ny, R * 0.95);
                 bloomBlue.addColorStop(0.0, hexToRgba('#60a5fa', 0.85));
