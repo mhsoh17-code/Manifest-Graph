@@ -353,7 +353,6 @@
             background-clip: text;
             color: transparent;
             -webkit-text-fill-color: transparent;
-            animation: silverShimmerSweep 9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
         }
         .brand-dot {
             color: #3f3f46;
@@ -382,19 +381,23 @@
             background-clip: text;
             color: transparent;
             -webkit-text-fill-color: transparent;
-            animation: silverShimmerSweep 9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-            animation-delay: 0.14s;
+        }
+        .brand-logo.shimmer-active .brand-manifest {
+            animation: silverShimmerSweep 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+        .brand-logo.shimmer-active .brand-title {
+            animation: silverShimmerSweep 1.5s cubic-bezier(0.4, 0, 0.2, 1) 0.14s forwards;
         }
 
         @keyframes silverShimmerSweep {
-            0%, 80% {
+            0% {
                 background-position: 140% 50%;
                 filter: drop-shadow(0 0 0px rgba(255, 255, 255, 0));
             }
-            88% {
-                filter: drop-shadow(0 0 7px rgba(255, 255, 255, 0.32));
+            45% {
+                filter: drop-shadow(0 0 7px rgba(255, 255, 255, 0.35));
             }
-            96%, 100% {
+            100% {
                 background-position: -60% 50%;
                 filter: drop-shadow(0 0 0px rgba(255, 255, 255, 0));
             }
@@ -604,15 +607,38 @@
             {id: 'e5', from: 1, to: 5, titlePath: 'جهش از هسته به آینده', chunks: [essayChunks[13], essayChunks[15]], rawColor: '#34d399'}
         ];
 
+        // ترتیب زمانی وزش موج تنفس: از گوشه بالا راست به سمت گوشه پایین چپ
+        // ۱. زرد (e6) -> ۲. سبز (e5) -> ۳. آبی (e1) -> ۴. قرمز (e4) -> ۵. بنفش (e2) -> ۶. نارنجی (e3)
+        const breathOrderIndex = {
+            'e6': 0, // زرد (#fbbf24) - گوشه بالا راست
+            'e5': 1, // سبز (#34d399) - متمایل به راست
+            'e1': 2, // آبی (#60a5fa) - میانی
+            'e4': 3, // قرمز (#f87171) - متمایل به چپ
+            'e2': 4, // بنفش (#c084fc) - چپ
+            'e3': 5  // نارنجی (#fb923c) - گوشه پایین چپ
+        };
+
         var isMiniatureMode = false;
         var activeEdgeId = null;
         var pulseAnimFrame = null;
 
-        // مدیریت سیکل هوشمند و متناوب افکت دعوت به لمس (۴.۶ ثانیه در ورود، سپس سیکل‌های ۶ ثانیه سکون و ۳ ثانیه افکت)
+        // مدیریت سیکل هوشمند و متناوب افکت دعوت به لمس و هماهنگی با درخشش برند/مانیفست
         var affordanceStartTime = null;
-        var affordanceCurrentDuration = 4600;
+        var affordanceCurrentDuration = 1250;
         var affordanceAnimFrame = null;
         var affordanceIdleTimer = null;
+        var brandShimmerTimer = null;
+
+        function triggerBrandShimmer() {
+            var brandEl = document.querySelector('.brand-logo');
+            if (!brandEl) return;
+            brandEl.classList.remove('shimmer-active');
+            void brandEl.offsetWidth; // Force Reflow
+            brandEl.classList.add('shimmer-active');
+            setTimeout(function() {
+                if (brandEl) brandEl.classList.remove('shimmer-active');
+            }, 1900);
+        }
 
         function mixHexWithWhite(hex, ratio) {
             var c = hex.replace('#', '');
@@ -649,11 +675,20 @@
                 cancelAnimationFrame(affordanceAnimFrame);
                 affordanceAnimFrame = null;
             }
+            if (brandShimmerTimer) {
+                clearTimeout(brandShimmerTimer);
+                brandShimmerTimer = null;
+            }
+            var brandEl = document.querySelector('.brand-logo');
+            if (brandEl) brandEl.classList.remove('shimmer-active');
             affordanceStartTime = null;
         }
 
         function scheduleNextAffordanceWave(delayMs, waveDurationMs) {
-            stopAffordanceCycle();
+            if (affordanceIdleTimer) {
+                clearTimeout(affordanceIdleTimer);
+                affordanceIdleTimer = null;
+            }
             affordanceIdleTimer = setTimeout(function() {
                 affordanceIdleTimer = null;
                 if (isMiniatureMode || activeEdgeId || document.getElementById('edge-modal').classList.contains('show')) {
@@ -664,11 +699,18 @@
         }
 
         function runAffordanceWave(durationMs) {
-            stopAffordanceCycle();
+            if (affordanceIdleTimer) {
+                clearTimeout(affordanceIdleTimer);
+                affordanceIdleTimer = null;
+            }
+            if (affordanceAnimFrame) {
+                cancelAnimationFrame(affordanceAnimFrame);
+                affordanceAnimFrame = null;
+            }
             if (isMiniatureMode || activeEdgeId || document.getElementById('edge-modal').classList.contains('show')) {
                 return;
             }
-            affordanceCurrentDuration = durationMs;
+            affordanceCurrentDuration = durationMs || 1250;
             affordanceStartTime = performance.now();
 
             function stepAffordance(now) {
@@ -684,8 +726,18 @@
                     affordanceStartTime = null;
                     affordanceAnimFrame = null;
                     if (network) network.redraw();
-                    // پس از پایان افکت، ۶ ثانیه سکون و سپس اجرای مجدد سیکل کوتاه ۳ ثانیه‌ای
-                    scheduleNextAffordanceWave(6000, 3000);
+
+                    // دقیقاً ۰.۵ ثانیه پس از پایان تنفس گره‌ها، افکت درخشش عنوان و مانیفست اجرا می‌شود
+                    if (brandShimmerTimer) clearTimeout(brandShimmerTimer);
+                    brandShimmerTimer = setTimeout(function() {
+                        brandShimmerTimer = null;
+                        if (!isMiniatureMode && !activeEdgeId && !document.getElementById('edge-modal').classList.contains('show')) {
+                            triggerBrandShimmer();
+                        }
+                    }, 500);
+
+                    // پس از پایان موج تنفس، مکث ۵.۷۵ ثانیه‌ای سکون و سپس تکرار موج پله‌ای (سایکل دقیق ۷ ثانیه‌ای)
+                    scheduleNextAffordanceWave(5750, 1250);
                 }
             }
             affordanceAnimFrame = requestAnimationFrame(stepAffordance);
@@ -773,8 +825,64 @@
         var edgesDataSet = new vis.DataSet(edgesData);
         
         var hoveredEdgeId = null;
-        var edgeScales = {};
+        var edgeHoverGlow = {}; // سطح روشنایی نرم و تدریجی هاور برای هر مسیر (0.0 تا 1.0)
+        var edgeHoverScale = {}; // سطح انبساط مقیاس پوسته و مرواریدهای میان‌مسیر بر اثر هاور (0.0 تا 1.0)
+        var hoverRafId = null;
+        var lastHoverFrameTime = performance.now();
+        var pearlFlashStates = {}; // انیمیشن درخشش رعدآسای مرواریدهای میان‌مسیرهای متصل
         var lastModalOpenTime = 0;
+
+        function startHoverLoop() {
+            if (hoverRafId) return;
+            lastHoverFrameTime = performance.now();
+            function stepHover(now) {
+                var dt = Math.min(60, now - lastHoverFrameTime);
+                lastHoverFrameTime = now;
+                var hasActive = false;
+
+                edgesData.forEach(function(e) {
+                    var isTarget = (hoveredEdgeId === e.id);
+                    var currentGlow = edgeHoverGlow[e.id] || 0;
+                    var currentScale = edgeHoverScale[e.id] || 0;
+
+                    // ۱. روشنایی مسیر: ورود سریع، خاموش شدن چابک‌تر و سریع‌تر (۱۹۰ میلی‌ثانیه به جای ۳۰۰)
+                    if (isTarget) {
+                        if (currentGlow < 1.0) {
+                            edgeHoverGlow[e.id] = 1.0;
+                            hasActive = true;
+                        }
+                    } else if (currentGlow > 0.005) {
+                        edgeHoverGlow[e.id] = Math.max(0, currentGlow - (dt / 190));
+                        hasActive = true;
+                    } else {
+                        edgeHoverGlow[e.id] = 0;
+                    }
+
+                    // ۲. مقیاس پوسته و مرواریدهای میان‌مسیر: ورود سریع، کوچک شدن آرام، ابریشمی و زنده (۲۸۰ میلی‌ثانیه)
+                    if (isTarget) {
+                        if (currentScale < 1.0) {
+                            edgeHoverScale[e.id] = Math.min(1.0, currentScale + (dt / 85));
+                            hasActive = true;
+                        }
+                    } else if (currentScale > 0.005) {
+                        edgeHoverScale[e.id] = Math.max(0, currentScale - (dt / 280));
+                        hasActive = true;
+                    } else {
+                        edgeHoverScale[e.id] = 0;
+                    }
+                });
+
+                if (network) network.redraw();
+
+                if (hasActive) {
+                    hoverRafId = requestAnimationFrame(stepHover);
+                } else {
+                    hoverRafId = null;
+                    if (network) network.redraw();
+                }
+            }
+            hoverRafId = requestAnimationFrame(stepHover);
+        }
 
         // محاسبه دقیق کادر دربرگیرنده (Bounding Box) گراف فعلی روی صفحه برای جایگذاری بی‌نقص در فضای خالی بالای پنجره
         var graphBaseBBox = null;
@@ -923,7 +1031,13 @@
             return { x: pos.x, y: pos.y };
         }
 
-        // شعاع جابجایی بسیار ریز و ظریف روی ستاره پنج‌پر (حدود ۵.۸ پیکسل)
+        function getNodeConnectedEdgeCount(nodeId) {
+            return edgesData.filter(function(e) {
+                return e.from === nodeId || e.to === nodeId;
+            }).length;
+        }
+
+        // شعاع جابجایی پایه روی ستاره پنج‌پر (حدود ۵.۸ پیکسل)
         var NODE_DODGE_RADIUS = 5.8;
         var nodeVertexIndices = {};
         var nodeDodgeStates = {};
@@ -932,9 +1046,14 @@
             var home = getNodeHomePos(nodeId);
             var baseAngle = -Math.PI / 2 + (nodeId * 0.72); // زاویه متوازن و جهت‌گیری ستاره اختصاصی برای هر گره
             var angle = baseAngle + (k * (2 * Math.PI / 5));
+
+            // میزان حرکت همه گره‌ها (اندازه ستاره‌ها) همگی روی ۰.۶ برابر تنظیم شد
+            var scaleX = 0.6;
+            var scaleY = 0.6;
+
             return {
-                x: home.x + NODE_DODGE_RADIUS * Math.cos(angle),
-                y: home.y + NODE_DODGE_RADIUS * Math.sin(angle)
+                x: home.x + (NODE_DODGE_RADIUS * scaleX * Math.cos(angle)),
+                y: home.y + (NODE_DODGE_RADIUS * scaleY * Math.sin(angle))
             };
         }
 
@@ -942,16 +1061,32 @@
             var visNode = network && network.body && network.body.nodes && network.body.nodes[nodeId];
             if (!visNode) return;
 
-            if (nodeVertexIndices[nodeId] === undefined) {
-                nodeVertexIndices[nodeId] = 0;
-            }
-            // حرکت ستاره‌ای قطری با پرش دو راسی (0 -> 2 -> 4 -> 1 -> 3 -> 0) که دقیقاً هندسه ستاره پنج‌پر را طی ۵ کلیک متوالی رسم می‌کند
-            var nextVertexIdx = (nodeVertexIndices[nodeId] + 2) % 5;
+            // انتخاب تصادفی یک راس دیگر از ۵ راس ستاره (غیر از راس قبلی) برای غیرقابل پیش‌بینی بودن فرار و حس زنده بودن گراف
+            var currentIdx = (nodeVertexIndices[nodeId] !== undefined) ? nodeVertexIndices[nodeId] : -1;
+            var available = [0, 1, 2, 3, 4].filter(function(idx) { return idx !== currentIdx; });
+            var nextVertexIdx = available[Math.floor(Math.random() * available.length)];
             nodeVertexIndices[nodeId] = nextVertexIdx;
 
             var targetPos = getNodeStarVertex(nodeId, nextVertexIdx);
             var fromX = (typeof visNode.x === 'number') ? visNode.x : targetPos.x;
             var fromY = (typeof visNode.y === 'number') ? visNode.y : targetPos.y;
+
+            var edgeCount = getNodeConnectedEdgeCount(nodeId);
+            var duration = 320;
+            var easeType = 'normal';
+
+            if (edgeCount === 1) {
+                // گره‌های سبک: پرتاب‌شونده با شتاب اولیه و جهش فنری سبک مثل دست و پا
+                duration = 270;
+                easeType = 'projectile';
+            } else if (edgeCount === 2) {
+                duration = 320;
+                easeType = 'normal';
+            } else {
+                // گره‌های سنگین مرکزی: وزین، آرام و جدی با اینرسی بالا مثل اعضای مرکزی بدن
+                duration = 400;
+                easeType = 'heavy';
+            }
 
             nodeDodgeStates[nodeId] = {
                 fromX: fromX,
@@ -959,19 +1094,45 @@
                 targetX: targetPos.x,
                 targetY: targetPos.y,
                 startTime: performance.now(),
-                duration: 320 // حرکت فرز و قطعی گره در ۳۲۰ میلی‌ثانیه بدون تکان‌های اضافی
+                duration: duration,
+                easeType: easeType
             };
+        }
+
+        function easeProjectile(x) {
+            var c1 = 1.15;
+            var c3 = c1 + 1;
+            return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
+        }
+
+        function easeHeavy(x) {
+            return 1 - Math.pow(1 - x, 4);
         }
 
         function easeOutCubic(x) {
             return 1 - Math.pow(1 - x, 3);
         }
 
-        // واکنش کامل و آنی به لمس یا فشردن گره (سر خوردن گره + انتشار موج به سمت میان‌مسیر)
+        // واکنش رعدآسای نوری روی مرواریدهای میان‌مسیرهای متصل به محض کلیک
+        function triggerPearlLightningFlash(nodeId) {
+            var connectedEdges = edgesData.filter(function(e) {
+                return e.from === nodeId || e.to === nodeId;
+            });
+            var now = performance.now();
+            connectedEdges.forEach(function(e) {
+                pearlFlashStates[e.id] = {
+                    startTime: now,
+                    duration: 221 // زمان چشمک مرواریدهای همسایه ۱۵٪ کمتر شد (از ۲۶۰ به ۲۲۱ میلی‌ثانیه)
+                };
+            });
+        }
+
+        // واکنش کامل و آنی به لمس یا فشردن گره (سر خوردن گره + ارتعاش طناب + درخشش رعدآسای مرواریدها)
         function triggerNodeTouchResponse(nodeId) {
             if (!nodeId) return;
             triggerNodeDodge(nodeId);
             triggerNodeNeighborsWiggle(nodeId);
+            triggerPearlLightningFlash(nodeId);
             if (!wiggleAnimFrame) {
                 startWiggleLoop();
             }
@@ -1017,7 +1178,9 @@
                             var elapsedD = now - dState.startTime;
                             if (elapsedD < dState.duration) {
                                 var pr = elapsedD / dState.duration;
-                                var ease = easeOutCubic(pr);
+                                var ease = (dState.easeType === 'projectile')
+                                    ? easeProjectile(pr)
+                                    : ((dState.easeType === 'heavy') ? easeHeavy(pr) : easeOutCubic(pr));
                                 vNode.x = dState.fromX + (dState.targetX - dState.fromX) * ease;
                                 vNode.y = dState.fromY + (dState.targetY - dState.fromY) * ease;
                                 hasActive = true;
@@ -1026,6 +1189,18 @@
                                 vNode.y = dState.targetY;
                                 delete nodeDodgeStates[nId];
                             }
+                        }
+                    }
+                }
+
+                // به‌روزرسانی درخشش رعدآسای مرواریدها
+                for (var pEdgeId in pearlFlashStates) {
+                    var pf = pearlFlashStates[pEdgeId];
+                    if (pf) {
+                        if (now - pf.startTime < pf.duration) {
+                            hasActive = true;
+                        } else {
+                            delete pearlFlashStates[pEdgeId];
                         }
                     }
                 }
@@ -1349,7 +1524,8 @@
                     var visEdge = network.body.edges[edge.id];
                     if (visEdge && visEdge.edgeType && visEdge.edgeType.getPoint) {
                         var isActive = (activeEdgeId === edge.id);
-                        var isHovered = (!isActive && hoveredEdgeId === edge.id);
+                        var hGlow = edgeHoverGlow[edge.id] || 0;
+                        var isHovered = (!isActive && (hoveredEdgeId === edge.id || hGlow > 0.01));
 
                         ctx.save();
                         ctx.beginPath();
@@ -1370,11 +1546,13 @@
                             ctx.lineWidth = 2.5 + (pulseWave * 3.0);
                             ctx.shadowColor = '#ffffff';
                             ctx.shadowBlur = 8 + (pulseWave * 18);
-                        } else if (isHovered) {
-                            ctx.strokeStyle = '#ffffff';
-                            ctx.lineWidth = 3.2;
+                        } else if (hGlow > 0.01) {
+                            // خاموش شدن با متانت، وقار و نرمی ابریشمی بدون پرش ناگهانی
+                            var glowStroke = (hGlow > 0.85) ? '#ffffff' : mixHexWithWhite(edge.rawColor, hGlow * 0.95);
+                            ctx.strokeStyle = glowStroke;
+                            ctx.lineWidth = 2.0 + (hGlow * 1.2);
                             ctx.shadowColor = edge.rawColor;
-                            ctx.shadowBlur = 12;
+                            ctx.shadowBlur = hGlow * 12;
                         } else {
                             ctx.strokeStyle = edge.rawColor;
                             ctx.lineWidth = 2.0;
@@ -1401,50 +1579,51 @@
                     }
                 });
 
-                // محاسبه ضریب انیمیشن دعوت به تعامل (چه در ورود ۴.۶ ثانیه‌ای و چه در سیکل‌های ۳ ثانیه‌ای بعدی)
-                var introEnvelope = 0;
+                // زمان‌بندی انیمیشن موج تنفس چابک میان‌مسیرها
                 var introElapsed = 0;
                 if (affordanceStartTime !== null && !isMiniatureMode && !activeEdgeId) {
                     introElapsed = now - affordanceStartTime;
-                    if (introElapsed > 0 && introElapsed < affordanceCurrentDuration) {
-                        var fadeInDur = Math.min(600, affordanceCurrentDuration * 0.25);
-                        var fadeOutDur = Math.min(1200, affordanceCurrentDuration * 0.38);
-                        var fadeIn = Math.min(1, introElapsed / fadeInDur);
-                        var fadeOut = Math.min(1, (affordanceCurrentDuration - introElapsed) / fadeOutDur);
-                        introEnvelope = fadeIn * (fadeOut * fadeOut * (3 - 2 * fadeOut));
-                    }
                 }
 
                 edgesData.forEach(function(edge, idx) {
                     var visEdge = network.body.edges[edge.id];
                     if (visEdge && visEdge.edgeType && visEdge.edgeType.getPoint) {
                         var isActive = (activeEdgeId === edge.id);
-                        var isHovered = (!isActive && hoveredEdgeId === edge.id);
+                        var hGlow = edgeHoverGlow[edge.id] || 0;
+                        var isHovered = (!isActive && (hoveredEdgeId === edge.id || hGlow > 0.01));
 
+                        // افکت تنفس متناوب، چابک و پله‌ای میان‌مسیرها (۰.۱ ثانیه مکث فاز بین میان‌مسیرها - نصف شدن مکث)
+                        // ترتیب وزش موج از گوشه بالا راست به گوشه پایین چپ: زرد -> سبز -> آبی -> قرمز -> بنفش -> نارنجی
                         var introBreath = 0;
                         var ripplePhase = 0;
-                        if (introEnvelope > 0.001) {
-                            var phaseOffset = idx * 0.75;
-                            var localWave = (Math.sin((introElapsed * 0.0042) - phaseOffset) + 1) * 0.5;
-                            introBreath = localWave * introEnvelope;
-                            ripplePhase = ((introElapsed * 0.00065) + (idx * 0.16)) % 1;
+                        var singleBreathDuration = 650; // مدت تنفس چابک هر میان‌مسیر
+                        var breathStepDelay = 100; // مکث بین هر دو میان‌مسیر (نصف شد: ۱۰۰ میلی‌ثانیه به جای ۲۰۰)
+                        var orderIdx = (typeof breathOrderIndex[edge.id] !== 'undefined') ? breathOrderIndex[edge.id] : idx;
+                        var edgeStart = orderIdx * breathStepDelay;
+                        var edgeElapsed = introElapsed - edgeStart;
+
+                        if (affordanceStartTime !== null && !isMiniatureMode && !activeEdgeId && edgeElapsed >= 0 && edgeElapsed <= singleBreathDuration) {
+                            var pr = edgeElapsed / singleBreathDuration;
+                            var s = Math.sin(pr * Math.PI);
+                            // شدت واضح‌تر و زنده‌تر با انحنای صعود و فرود بدون شوک
+                            introBreath = Math.pow(s, 1.25);
+                            ripplePhase = pr;
                         }
 
-                        if (edgeScales[edge.id] === undefined) edgeScales[edge.id] = 1.0;
-                        var targetScale = (hoveredEdgeId === edge.id)
-                            ? 1.4
-                            : (isActive
-                                ? (1.12 + pulseWave * 0.16)
-                                : (1.0 + introBreath * 0.07)); // تنفس بسیار ملایم غلاف (فقط ۷٪ به جای ۲۲٪)
+                        // محاسبه نرم، ابریشمی و ارگانیک مقیاس پوسته میان‌مسیر و مرواریدها
+                        var hScaleProg = edgeHoverScale[edge.id] || 0;
+                        var hoverEase = hScaleProg * hScaleProg * (3 - 2 * hScaleProg); // انحنای نرم هرمیت
+                        var hoverScaleAdd = hoverEase * 0.40;
 
-                        if (!isActive && introEnvelope <= 0.001 && Math.abs(edgeScales[edge.id] - targetScale) > 0.01) {
-                            edgeScales[edge.id] += (targetScale - edgeScales[edge.id]) * 0.15;
-                            requestAnimationFrame(function() { network.redraw(); });
+                        var baseScale;
+                        if (isActive) {
+                            baseScale = 1.12 + (pulseWave * 0.16);
                         } else {
-                            edgeScales[edge.id] = targetScale;
+                            // تنفس چابک با شدت واضح‌تر (۱۳٪ افزایش مقیاس)
+                            baseScale = 1.0 + (introBreath * 0.13);
                         }
 
-                        var currentScale = edgeScales[edge.id];
+                        var currentScale = isActive ? baseScale : (baseScale + hoverScaleAdd);
                         var count = edge.chunks.length;
                         var baseRadX = 20 + (count * 3);
                         var baseRadY = 9 + (count * 1.5);
@@ -1509,10 +1688,10 @@
                             return { upper: upper, lower: lower };
                         }
 
-                        // رسم افکت دعوت به لمس پیرامون غلاف (ملایم، نزدیک و منطبق بر پوسته غلاف بدون فاصله و درشتی اضافه)
-                        if (introEnvelope > 0.01) {
-                            var ripplePts = generatePodPoints(1.05 + ripplePhase * 0.16, 1.06 + ripplePhase * 0.18);
-                            var ringAlpha = (1 - ripplePhase) * 0.28 * introEnvelope;
+                        // رسم افکت دعوت به لمس پیرامون غلاف (هاله تنفس ارگانیک)
+                        if (introBreath > 0.01) {
+                            var ripplePts = generatePodPoints(1.04 + ripplePhase * 0.22, 1.05 + ripplePhase * 0.24);
+                            var ringAlpha = (1 - ripplePhase) * 0.45 * introBreath;
 
                             ctx.save();
                             ctx.beginPath();
@@ -1525,8 +1704,9 @@
                             }
                             ctx.closePath();
                             ctx.strokeStyle = hexToRgba(edge.rawColor, ringAlpha);
-                            ctx.lineWidth = 1.0;
-                            ctx.shadowBlur = 0;
+                            ctx.lineWidth = 1.25;
+                            ctx.shadowColor = edge.rawColor;
+                            ctx.shadowBlur = 6 * introBreath;
                             ctx.stroke();
                             ctx.restore();
                         }
@@ -1548,15 +1728,15 @@
                             ctx.fillStyle = mixHexWithWhite(edge.rawColor, pulseWave * 0.82);
                             ctx.shadowColor = mixHexWithWhite(edge.rawColor, pulseWave * 0.9);
                             ctx.shadowBlur = 10 + (pulseWave * 16);
-                        } else if (isHovered) {
-                            ctx.fillStyle = mixHexWithWhite(edge.rawColor, 0.35);
+                        } else if (hGlow > 0.01) {
+                            ctx.fillStyle = mixHexWithWhite(edge.rawColor, hGlow * 0.35);
                             ctx.shadowColor = edge.rawColor;
-                            ctx.shadowBlur = 8;
-                        } else if (introEnvelope > 0.01) {
-                            ctx.fillStyle = mixHexWithWhite(edge.rawColor, introBreath * 0.15);
-                            ctx.shadowColor = 'transparent';
-                            ctx.shadowBlur = 0;
-                            ctx.shadowOffsetY = 0;
+                            ctx.shadowBlur = hGlow * 8;
+                        } else if (introBreath > 0.01) {
+                            // درخشش واضح‌تر و زنده‌تر تنفس ارگانیک با نور ملایم پیرامونی
+                            ctx.fillStyle = mixHexWithWhite(edge.rawColor, introBreath * 0.38);
+                            ctx.shadowColor = edge.rawColor;
+                            ctx.shadowBlur = introBreath * 10;
                         } else {
                             ctx.fillStyle = edge.rawColor;
                             ctx.shadowColor = 'transparent';
@@ -1584,23 +1764,23 @@
                             var unx = -uy;
                             var uny = ux;
 
-                            // ضخامت استروک و مقیاس ابعادی مرواریدها (۸٪ بزرگتر با محاسبه دقیق مماس خط دور بدون هیچ تداخلی)
-                            var strokeW = 0.65;
+                            // مقیاس ۱.۱ برابری مرواریدهای مشکی با حفظ هندسه تماس مماس دقیق خطوط دور
+                            var strokeW = 0.70;
                             var pearls = [];
 
                             if (count === 1) {
-                                var R_vis1 = 4.8 * 1.08 * currentScale;
+                                var R_vis1 = 4.8 * 1.08 * 1.10 * currentScale;
                                 var rPath1 = Math.max(0.5, R_vis1 - strokeW * 0.5);
                                 pearls.push({ x: cxMid, y: cyMid, rPath: rPath1, R_vis: R_vis1 });
                             } else if (count === 2) {
-                                // دو مروارید ۸٪ بزرگتر در امتداد محور غلاف، مماس دقیق خطوط دور بدون افتادن استروک‌ها روی هم
-                                var R_vis2 = 4.2 * 1.08 * currentScale;
+                                // دو مروارید مشکی ۱.۱ برابر بزرگتر در امتداد محور غلاف، مماس دقیق خطوط دور بدون افتادن استروک‌ها روی هم
+                                var R_vis2 = 4.2 * 1.08 * 1.10 * currentScale;
                                 var rPath2 = Math.max(0.5, R_vis2 - strokeW * 0.5);
                                 pearls.push({ x: cxMid - ux * R_vis2, y: cyMid - uy * R_vis2, rPath: rPath2, R_vis: R_vis2 });
                                 pearls.push({ x: cxMid + ux * R_vis2, y: cyMid + uy * R_vis2, rPath: rPath2, R_vis: R_vis2 });
                             } else if (count === 3) {
-                                // سه مروارید ۸٪ بزرگتر در خوشه مثلثی متقارن، مماس دو به دو بر استروک یکدیگر با خطای دقیقاً صفر
-                                var R_vis3 = 3.8 * 1.08 * currentScale;
+                                // سه مروارید مشکی ۱.۱ برابر بزرگتر در خوشه مثلثی متقارن، مماس دو به دو بر استروک یکدیگر
+                                var R_vis3 = 3.8 * 1.08 * 1.10 * currentScale;
                                 var rPath3 = Math.max(0.5, R_vis3 - strokeW * 0.5);
                                 var rDist3 = (2 * R_vis3) / Math.sqrt(3);
                                 pearls.push({ x: cxMid + ux * rDist3, y: cyMid + uy * rDist3, rPath: rPath3, R_vis: R_vis3 });
@@ -1617,12 +1797,26 @@
                                     R_vis: R_vis3
                                 });
                             } else {
-                                var R_vis4 = 3.3 * 1.08 * currentScale;
+                                var R_vis4 = 3.3 * 1.08 * 1.10 * currentScale;
                                 var rPath4 = Math.max(0.5, R_vis4 - strokeW * 0.5);
                                 pearls.push({ x: cxMid + ux * R_vis4, y: cyMid + uy * R_vis4, rPath: rPath4, R_vis: R_vis4 });
                                 pearls.push({ x: cxMid - ux * R_vis4, y: cyMid - uy * R_vis4, rPath: rPath4, R_vis: R_vis4 });
                                 pearls.push({ x: cxMid + unx * R_vis4, y: cyMid + uny * R_vis4, rPath: rPath4, R_vis: R_vis4 });
                                 pearls.push({ x: cxMid - unx * R_vis4, y: cyMid - uny * R_vis4, rPath: rPath4, R_vis: R_vis4 });
+                            }
+
+                            // محاسبه وضعیت درخشش رعدآسا برای مرواریدهای این مسیر
+                            var flashState = pearlFlashStates[edge.id];
+                            var flashIntensity = 0;
+                            if (flashState) {
+                                var elapsedF = now - flashState.startTime;
+                                if (elapsedF < flashState.duration) {
+                                    var pfProgress = elapsedF / flashState.duration;
+                                    // اوج‌گیری رعدآسا در ۲۰٪ اول، سپس محو شدن نرم و ابریشمی
+                                    flashIntensity = (pfProgress < 0.20)
+                                        ? (pfProgress / 0.20)
+                                        : Math.pow(Math.max(0, 1.0 - (pfProgress - 0.20) / 0.80), 2.2);
+                                }
                             }
 
                             pearls.forEach(function(prl) {
@@ -1631,23 +1825,38 @@
                                     prl.x - prl.R_vis * 0.35, prl.y - prl.R_vis * 0.35, prl.R_vis * 0.08,
                                     prl.x, prl.y, prl.R_vis
                                 );
-                                pGrad.addColorStop(0.0, '#ffffff');
-                                pGrad.addColorStop(0.40, '#f8fafc');
-                                pGrad.addColorStop(0.80, '#e2e8f0');
-                                pGrad.addColorStop(1.0, hexToRgba(edge.rawColor, 0.45));
+
+                                if (flashIntensity > 0.01) {
+                                    // تابش رعدآسا و زودگذر نقره‌ای-سفید روی مروارید سیاه
+                                    pGrad.addColorStop(0.0, mixHexWithWhite('#ffffff', flashIntensity));
+                                    pGrad.addColorStop(0.35, mixHexWithWhite('#334155', flashIntensity * 0.88));
+                                    pGrad.addColorStop(0.70, mixHexWithWhite('#0f172a', flashIntensity * 0.70));
+                                    pGrad.addColorStop(1.0, mixHexWithWhite('#020617', flashIntensity * 0.35));
+                                } else {
+                                    // بافت مروارید سیاه صیقلی (Onyx Black Pearl)
+                                    pGrad.addColorStop(0.0, '#475569');
+                                    pGrad.addColorStop(0.35, '#1e293b');
+                                    pGrad.addColorStop(0.70, '#0f172a');
+                                    pGrad.addColorStop(1.0, '#020617');
+                                }
 
                                 ctx.beginPath();
                                 ctx.arc(prl.x, prl.y, prl.rPath, 0, 2 * Math.PI);
                                 ctx.fillStyle = pGrad;
-                                if (isActive) {
+
+                                if (flashIntensity > 0.01) {
                                     ctx.shadowColor = '#ffffff';
-                                    ctx.shadowBlur = 6;
+                                    ctx.shadowBlur = flashIntensity * 12;
+                                } else if (isActive) {
+                                    ctx.shadowColor = '#ffffff';
+                                    ctx.shadowBlur = 4;
                                 } else {
                                     ctx.shadowBlur = 0;
                                 }
                                 ctx.fill();
 
-                                ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+                                var rimAlpha = 0.28 + (flashIntensity * 0.72);
+                                ctx.strokeStyle = 'rgba(255, 255, 255, ' + rimAlpha.toFixed(3) + ')';
                                 ctx.lineWidth = strokeW;
                                 ctx.stroke();
                                 ctx.restore();
@@ -1775,7 +1984,7 @@
                         if (hoveredEdgeId !== null) {
                             hoveredEdgeId = null;
                             container.style.cursor = 'default';
-                            if (network) network.redraw();
+                            startHoverLoop();
                         }
                         return;
                     }
@@ -1786,7 +1995,7 @@
                     if (nextHover !== hoveredEdgeId) {
                         hoveredEdgeId = nextHover;
                         container.style.cursor = nextHover ? 'pointer' : 'default';
-                        if (network) network.redraw();
+                        startHoverLoop();
                     }
                 }, { passive: true });
 
@@ -1794,7 +2003,7 @@
                     if (hoveredEdgeId !== null) {
                         hoveredEdgeId = null;
                         container.style.cursor = 'default';
-                        if (network) network.redraw();
+                        startHoverLoop();
                     }
                 }, { passive: true });
             }
@@ -1802,8 +2011,8 @@
             network.once("afterDrawing", function() {
                 fitGraph(900, function() {
                     graphBaseBBox = measureGraphBaseBBox();
-                    // در بدو ورود: اجرای موج اولیه به مدت ۴.۶ ثانیه، سپس ورود خودکار به سیکل ۶ ثانیه سکون / ۳ ثانیه افکت
-                    runAffordanceWave(4600);
+                    // در بدو ورود: اجرای موج اولیه پله‌ای، سپس ورود خودکار به سیکل ۵.۷۵ ثانیه سکون / موج تنفس چابک
+                    runAffordanceWave(1250);
                 });
             });
         }
@@ -1883,8 +2092,8 @@
                         nodes: { font: { color: '#e2e8f0' } }
                     });
                 }
-                // پس از بسته شدن پنجره و بازگشت گراف به حالت بزرگ و استاندارد مرکزی: ۶ ثانیه سکون و سپس شروع سیکل‌های ۳ ثانیه‌ای
-                scheduleNextAffordanceWave(6000, 3000);
+                // پس از بسته شدن پنجره و بازگشت گراف به حالت بزرگ و استاندارد مرکزی: ۵.۷۵ ثانیه سکون و سپس شروع سیکل موج تنفس (سایکل دقیق ۷ ثانیه‌ای)
+                scheduleNextAffordanceWave(5750, 1250);
             }
         }
 
@@ -2037,7 +2246,7 @@
             }
         });
 
-        // قابلیت کشیدن پنجره با انگشت (به پایین و بالا) به همراه واکنش آنی و بدون تاخیر گراف بالا
+        // قابلیت کشیدن پنجره با انگشت (از روی خود پنجره یا فضای خالی بالای آن) با انطباق زنده گراف
         (function initSwipeToClose() {
             var modalBox = document.getElementById('modal-content-box');
             var modalLayout = document.getElementById('modal-layout');
@@ -2046,48 +2255,62 @@
             var startY = 0;
             var currentDeltaY = 0;
             var isDraggingSheet = false;
-            var canDragFromScrollTop = false;
+            var canDragSheet = false;
 
-            modalBox.addEventListener('touchstart', function(e) {
+            window.addEventListener('touchstart', function(e) {
                 if (window.innerWidth > 768) return;
-                if (!document.getElementById('edge-modal').classList.contains('show')) return;
+                var modalEl = document.getElementById('edge-modal');
+                if (!modalEl || !modalEl.classList.contains('show')) return;
                 if (e.touches.length !== 1) return;
 
                 startY = e.touches[0].clientY;
                 currentDeltaY = 0;
                 isDraggingSheet = false;
 
-                var touchedHandle = handleArea && handleArea.contains(e.target);
-                canDragFromScrollTop = touchedHandle || (modalBox.scrollTop <= 2);
+                var isInsideModalBox = modalBox && modalBox.contains(e.target);
+                if (isInsideModalBox) {
+                    var touchedHandle = handleArea && handleArea.contains(e.target);
+                    canDragSheet = touchedHandle || (modalBox.scrollTop <= 2);
+                } else {
+                    // لمس در فضای بالای پنجره / پس‌زمینه گراف: کشیدن رو به پایین فوراً پنجره را جمع می‌کند
+                    canDragSheet = true;
+                }
             }, { passive: true });
 
-            modalBox.addEventListener('touchmove', function(e) {
-                if (!canDragFromScrollTop || window.innerWidth > 768) return;
+            window.addEventListener('touchmove', function(e) {
+                if (!canDragSheet || window.innerWidth > 768) return;
+                var modalEl = document.getElementById('edge-modal');
+                if (!modalEl || !modalEl.classList.contains('show')) return;
+
                 var y = e.touches[0].clientY;
                 var dy = y - startY;
 
-                if (dy > 4) {
-                    if (modalBox.scrollTop <= 2) {
-                        isDraggingSheet = true;
-                        currentDeltaY = dy;
-                        document.body.classList.add('graph-live-sync');
-                        modalLayout.style.transition = 'none';
-                        modalLayout.style.transform = `translate3d(0, ${dy}px, 0)`;
-                        syncGraphToAvailableSpace(dy);
-                        if (e.cancelable) e.preventDefault();
-                    }
+                var isInsideModalBox = modalBox && modalBox.contains(e.target);
+                if (isInsideModalBox && modalBox.scrollTop > 2 && dy > 0 && !isDraggingSheet) {
+                    return; // اجازه اسکرول عادی داخل محتوای پنجره
+                }
+
+                if (dy > 3) {
+                    isDraggingSheet = true;
+                    currentDeltaY = dy;
+                    document.body.classList.add('graph-live-sync');
+                    modalLayout.style.transition = 'none';
+                    modalLayout.style.transform = 'translate3d(0, ' + dy + 'px, 0)';
+                    syncGraphToAvailableSpace(dy);
+                    if (e.cancelable) e.preventDefault();
                 } else if (isDraggingSheet) {
                     var elasticUp = dy * 0.25;
                     currentDeltaY = elasticUp;
                     document.body.classList.add('graph-live-sync');
                     modalLayout.style.transition = 'none';
-                    modalLayout.style.transform = `translate3d(0, ${elasticUp}px, 0)`;
+                    modalLayout.style.transform = 'translate3d(0, ' + elasticUp + 'px, 0)';
                     syncGraphToAvailableSpace(elasticUp);
                     if (e.cancelable) e.preventDefault();
                 }
             }, { passive: false });
 
             function finishTouch() {
+                canDragSheet = false;
                 if (!isDraggingSheet) return;
                 isDraggingSheet = false;
                 document.body.classList.remove('graph-live-sync');
@@ -2108,8 +2331,8 @@
                 currentDeltaY = 0;
             }
 
-            modalBox.addEventListener('touchend', finishTouch, { passive: true });
-            modalBox.addEventListener('touchcancel', finishTouch, { passive: true });
+            window.addEventListener('touchend', finishTouch, { passive: true });
+            window.addEventListener('touchcancel', finishTouch, { passive: true });
         })();
 
         if (document.readyState === 'loading') {
